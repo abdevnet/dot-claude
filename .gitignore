@@ -5,11 +5,12 @@
 !CLAUDE.md
 !agents/
 !skills/
+!commands/
 
 # Allow contents inside those folders
 !agents/**
 !skills/**
-
+!commands/**
 # Keep the .gitignore file itself
 !.gitignore
 

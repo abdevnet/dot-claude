@@ -2,3 +2,4 @@
 - Keep responses concise and focused.
 - Avoid generating extra documents, summaries, or plans unless I specifically ask for them.
 - Always use the batch-code-analysis-skill to break the work up into tasks running in parallel when asked to do a code review.  Each task should use the code-review-skill.
+- Don't assume the date use bash date command to get current year.

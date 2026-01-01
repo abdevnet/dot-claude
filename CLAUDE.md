@@ -3,3 +3,41 @@
 - Avoid generating extra documents, summaries, or plans unless I specifically ask for them.
 - Always use the batch-code-analysis-skill to break the work up into tasks running in parallel when asked to do a code review.  Each task should use the code-review-skill.
 - Don't assume the date use bash date command to get current year.
+
+  ## Markdown to PDF Conversion
+
+  Use Chrome headless for PDF generation (better styling than pandoc):
+
+  1. Convert markdown to styled HTML with GitHub-like CSS
+  2. Use Chrome headless to print to PDF:
+
+  ```bash
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu --print-to-pdf="output.pdf" "input.html"
+
+  Key CSS for styled HTML wrapper:
+  - font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif
+  - max-width: 900px, margin: 0 auto, padding: 40px 20px
+  - Tables: border-collapse, alternating row colors (#f6f8fa)
+  - Code blocks: background #f6f8fa, border-radius 6px
+  - Headings: border-bottom on h1/h2
+
+  Clean up intermediate HTML files after PDF generation.
+  ```
+  ## Python Environment (uv only)
+
+- ALWAYS use `uv`
+- NEVER use `pip`, `poetry`, `pipenv`, or `conda`
+- Dependencies live in `pyproject.toml`
+- Lockfile is `uv.lock`
+- Run all Python commands via `uv run`
+
+### Setup
+- `uv venv`
+- `uv sync`
+
+### Common
+- Add dep: `uv add <pkg>`
+- Add dev dep: `uv add --dev <pkg>`
+- Remove dep: `uv remove <pkg>`
+- Run script: `uv run python script.py`
+- Run tests: `uv run pytest`

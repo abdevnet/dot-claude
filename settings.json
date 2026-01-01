@@ -1,4 +1,47 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_evaluate",
+      "Bash(claude config list)",
+      "Bash(claude mcp list)",
+      "mcp__playwright__browser_network_requests",
+      "Bash(claude plugin list:*)",
+      "Bash(claude plugin marketplace:*)",
+      "Bash(claude plugin --help:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(claude skill:*)",
+      "WebFetch(domain:devblogs.microsoft.com)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(cat:*)",
+      "Bash(dotnet run:*)",
+      "Bash(curl:*)",
+      "Bash(dotnet-script:*)",
+      "WebFetch(domain:gist.github.com)",
+      "Bash(chmod:*)",
+      "Bash(docker run:*)",
+      "Bash(./setup-monitoring.sh)",
+      "mcp__playwright__browser_file_upload",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_take_screenshot",
+      "Bash(docker-compose logs:*)",
+      "Bash(python3:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose ps:*)",
+      "WebFetch(domain:agents.md)"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "default"
+  },
   "hooks": {
     "Notification": [
       {
@@ -23,7 +66,8 @@
   },
   "enabledPlugins": {
     "superpowers@superpowers-marketplace": false,
-    "commit-commands@claude-code-plugins": true
+    "commit-commands@claude-code-plugins": true,
+    "omnisharp@claude-code-lsps": true
   },
   "alwaysThinkingEnabled": true
 }

@@ -1,7 +1,13 @@
 - Use comments sparingly.  Only comment on complex code
 - Keep responses concise and focused.
 - Avoid generating extra documents, summaries, or plans unless I specifically ask for them.
-- Always use the batch-code-analysis-skill to break the work up into tasks running in parallel when asked to do a code review.  Each task should use the code-review-skill.
+- Always use the batch-code-analysis-skill when asked to review multiple files or a PR. The batch skill will automatically:
+  - Load standards from ~/projects/ai-instructions/
+  - Partition work into parallel tasks
+  - Delegate to code-review-skill workers (Haiku 4.5)
+  - Escalate to Sonnet 4.5 when needed
+  - Aggregate results into a single review
+- For single-file reviews, you may use code-review-skill directly.
 - Don't assume the date use bash date command to get current year.
 
   ## Markdown to PDF Conversion

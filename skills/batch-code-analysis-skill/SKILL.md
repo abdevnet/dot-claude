@@ -1,103 +1,178 @@
 ---
 name: Batch Code Analysis Skill
-description: Analyzes large repositories by delegating batched reviews to Haiku 4.5 workers
+description: Orchestrates parallel code reviews by delegating batched analysis to code-review-skill workers
 ---
 
 # Batch Code Analysis Skill
 
-You orchestrate large-scale code analysis with **Sonnet 4.5** by planning Haiku 4.5 subtasks, collecting their findings, and delivering a single concise report to the user.
+You are an orchestration skill responsible for performing scalable, parallel code reviews by delegating bounded analysis tasks to `code-review-skill`.
 
-## Instructions
+This skill **must not perform detailed code review itself**. Its job is to:
+- prepare grounded inputs,
+- delegate safely,
+- and aggregate results.
 
-### Role of Sonnet 4.5 (You)
-- Interpret the user request (e.g., security scan, style audit, performance review, code review).
-- Enumerate relevant files and split them into logical batches (≈10 files each).
-- Launch a `Task` per batch using **Haiku 4.5**.
-- Track completion status, retry failed batches when possible, and aggregate the structured outputs.
-- Deduplicate overlapping issues and summarize the combined findings for the user.
+---
 
-### Role of Haiku 4.5 (Workers)
-- Analyze the assigned file batch in isolation.
-- Surface security, performance, style, or other requested issues with short explanations.
-- Return JSON or Markdown that is easy to merge (avoid narrative text unless needed for clarity).
+## Core Principles (Non-Negotiable)
 
-### Workflow
-1. **Understand scope**: Confirm target repositories, directories, or file patterns.
-2. **Plan batches**: Group files by feature, layer, or size. Keep batches small enough to fit Haiku 4.5’s context window.
-3. **Dispatch tasks**: Create parallel Haiku 4.5 tasks (up to 10 concurrently) with clear instructions, including Code Review Skill guidance whenever performing a code review.
-4. **Collect results**: Wait for all tasks, retry failures, and note missing files or partial results.
-5. **Aggregate**: Merge JSON arrays, group by file/severity, and remove duplicates.
-6. **Report**: Produce a structured summary with tables or bullet lists plus any remediation guidance.
+1. **Single Source of Truth**
+   - All standards, diffs, and context come from the parent.
+   - Delegated tasks must NEVER load repositories, filesystems, or external state.
 
-## Task Schema
+2. **No Invention**
+   - If something is not present in the provided inputs, it does not exist.
+   - Workers must be allowed to return empty findings.
 
-Use the following template (adjust `analysis_type`, `files`, or `output_format` as needed). When performing a code review, add the relevant standards excerpt from the Code Review Skill under `standards_context` so Haiku 4.5 evaluates each batch with the correct rules:
+3. **Evidence-First**
+   - All findings must be backed by verbatim code snippets supplied to workers.
 
-```json
-{
-  "task_name": "analyze_code_batch",
-  "model": "haiku-4.5",
-  "input": {
-    "files": ["file1.py", "file2.py", "..."],
-    "analysis_type": "security",
-    "standards_context": "Summaries or sections pulled from the Code Review Skill when applicable"
-  },
-  "output_format": "json"
-}
-```
+4. **Context Preservation**
+   - Worker outputs must be compact, structured, and bounded.
 
-### Example Result
+---
 
-```json
-{
-  "batch_id": 3,
-  "findings": [
-    { "file": "auth.py", "issue": "Hardcoded secret key", "severity": "high" },
-    { "file": "utils.py", "issue": "Input not sanitized", "severity": "medium" }
-  ]
-}
-```
+## High-Level Flow
 
-## Aggregation Guidance
+1. Collect Inputs  
+2. Load Standards (once)  
+3. Partition Work  
+4. Delegate Review Tasks (parallel)  
+5. Escalate When Necessary  
+6. Aggregate Final Review  
 
-After all batches finish:
-1. Merge JSON findings from every batch.
-2. Group entries by file and severity, keeping the highest severity per issue.
-3. Flag missing or failed batches so the user knows where coverage is incomplete.
-4. When the task is a code review, cite the specific standard or rule section provided by the Code Review Skill for every issue.
-5. Generate a human-readable summary, for example:
+---
 
-| File | Issue | Severity |
-|------|-------|----------|
-| auth.py | Hardcoded secret key | High |
-| utils.py | Input not sanitized | Medium |
+## Step 1: Collect Inputs
 
-**Formatting tip**: When presenting sections like “What’s Done Well,” output each ✅ item on its own line (or bullet) so the checklist remains readable.
+From the invoking context (e.g. PR review), gather:
 
-## Optimization Guidelines
-- Default batch size: 10 files; reduce if files are large or complex.
-- Maximum parallel tasks: 10 to balance speed and resource limits.
-- Always delegate analysis to Haiku 4.5 to preserve Sonnet 4.5’s context budget.
-- Prefer JSON outputs for easy merging; only use Markdown if the user explicitly requests prose.
-- Handle partial failures gracefully—surface completed findings and note pending work.
+- PR diff (preferred)
+- Or explicit file contents if diff is unavailable
+- File paths and languages involved
 
-## Usage
+If no code is provided:
+- Abort delegation
+- Return: “No code supplied for review.”
 
-Users might request:
-- “Analyze this repository for potential security issues.”
-- “Batch review the `/api` folder for performance problems.”
-- “Scan only the recently changed files for style violations.”
-- “Perform a code review of the latest backend changes against our standards.” (Load and embed the Code Review Skill guidance before dispatching batches.)
+---
 
-For each request, follow the workflow above, ensure Haiku 4.5 tasks reference the correct files, and return a single consolidated report.
+## Step 2: Load Standards (Parent Only)
 
-## Notes
-- Never attempt to analyze the entire repo directly; always break work into Haiku 4.5 batches.
-- Keep Haiku 4.5 prompts focused to avoid long responses.
-- For code review work, always run the Code Review Skill first and propagate its standards into each Haiku batch prompt.
-- This skill is designed for Claude Code or Claude API orchestration environments where task delegation is available.
-### Integrating the Code Review Skill
-- When the user request is a code review, invoke the **Code Review Skill** to load the authoritative standards (C#, Angular, SQL Server) before dispatching Haiku batches.
-- Include the relevant standards excerpts or references from the Code Review Skill output in every Haiku 4.5 batch prompt so each worker evaluates files against the same rules.
-- If Haiku surfaces code review findings, map them back to the Code Review Skill sections (e.g., naming, documentation, SQL conventions) in the aggregated report.
-- When non-code-review analysis is requested, you can skip this integration step.
+Determine applicable standards based on technologies detected:
+
+- C# (`.cs` files)
+- Angular / TypeScript (`.ts`, `.html` files in Angular context)
+- SQL Server (`.sql` files or embedded SQL in C#)
+
+### Loading Standards from ai-instructions Repository
+
+**First**, ensure the ai-instructions repository is available:
+- Check if `~/projects/ai-instructions/` exists
+- If the directory does NOT exist, clone it using:
+  ```bash
+  git clone https://swankmp@dev.azure.com/swankmp/Shared%20Projects/_git/ai-instructions ~/projects/ai-instructions
+  ```
+- If the directory exists but standards files are missing or you encounter read errors, try updating with:
+  ```bash
+  cd ~/projects/ai-instructions && git pull
+  ```
+
+**Then**, read the appropriate coding standards file(s):
+- C#: `~/projects/ai-instructions/code/csharp-instructions.md`
+- Angular: `~/projects/ai-instructions/angular/angular-instructions.md`
+- SQL Server: `~/projects/ai-instructions/database/sqlserver-instructions.md`
+
+### Passing Standards to Workers
+
+Pass the **entire standards file(s)** to workers (not excerpts):
+- Standards files are small (~9k characters, ~2-3k tokens)
+- Haiku has sufficient context window (200k tokens) to handle full documents
+- Full documents allow workers to cross-reference related sections
+- Simpler logic with no risk of missing relevant standards
+
+⚠️ **Never instruct workers to load standards themselves.** All standards must be loaded by the parent and passed to workers as complete files.
+
+---
+
+## Step 3: Partition the Work
+
+Split the review into independent, bounded tasks using one or more of:
+
+- File-based partitioning (recommended)
+- Technology-based partitioning
+- Logical diff chunks
+
+Each task must include:
+- Only the code relevant to that task
+- The complete standards file(s) applicable to that technology
+
+---
+
+## Step 4: Delegate to `code-review-skill`
+
+For each partition:
+
+- Invoke `code-review-skill` using the Task tool
+- Default model: **haiku** (Haiku 4.5)
+- Provide:
+  - Code snippet(s)
+  - File path(s)
+  - Line numbers (if known)
+  - Complete standards file(s) for the applicable technology
+  - Explicit instruction:
+    > "Do not infer beyond provided inputs."
+
+Workers must return **JSON only** per the `code-review-skill` schema.
+
+---
+
+## Step 5: Escalation Rules (Selective Sonnet Use)
+
+Re-run a task using **sonnet** (Sonnet 4.5) *only if* any of the following are true:
+
+- Worker reports `unknowns` that block a decision
+- Worker flags an issue with `confidence: low`
+- Conflicting findings between tasks
+- Security-critical area with ambiguous results
+
+Escalation must:
+- Use the same inputs (same code + same complete standards files)
+- Not add new context
+- Replace (not merge) the original result
+
+---
+
+## Step 6: Aggregate Results
+
+Combine all worker outputs into a single review:
+
+- Deduplicate identical issues
+- Prefer higher-confidence findings
+- Preserve file + line references
+- Do NOT editorialize beyond worker outputs
+
+If **no issues are found**, explicitly state that the review found no actionable items.
+
+---
+
+## Explicit Prohibitions
+
+The batch skill must NEVER:
+
+- Ask workers to clone, pull, or read repositories
+- Ask workers to “check if standards exist”
+- Ask workers to infer architectural intent
+- Merge speculative findings
+- Penalize workers for returning no issues
+
+---
+
+## Design Intent
+
+This skill ensures:
+- Parallelism does not create hallucinations
+- Haiku 4.5 workers remain safe and useful for routine checks
+- Sonnet 4.5 is reserved for ambiguity, not routine checks
+- Reviews are reproducible and explainable
+- Full standards documents provide complete context to all workers

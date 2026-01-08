@@ -67,7 +67,9 @@
   "enabledPlugins": {
     "superpowers@superpowers-marketplace": false,
     "commit-commands@claude-code-plugins": true,
-    "omnisharp@claude-code-lsps": true
+    "omnisharp@claude-code-lsps": true,
+    "ralph-wiggum@claude-code-plugins": false,
+    "csharp-lsp@claude-plugins-official": false
   },
   "alwaysThinkingEnabled": true
 }

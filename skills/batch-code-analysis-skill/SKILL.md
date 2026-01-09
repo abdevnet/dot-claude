@@ -156,6 +156,112 @@ If **no issues are found**, explicitly state that the review found no actionable
 
 ---
 
+## Step 7: Metrics Collection
+
+After aggregation, collect and output execution metrics to enable cost analysis and optimization.
+
+### Metrics to Track
+
+During orchestration, maintain counters for:
+
+**Worker Invocations**
+- `haiku_invocations`: Number of tasks sent to Haiku
+- `sonnet_invocations`: Number of tasks sent to Sonnet (escalations only)
+- `total_invocations`: Sum of all worker calls
+
+**Escalation Tracking**
+- `escalation_count`: Number of Haiku → Sonnet escalations
+- `escalation_reasons`: List of why each escalation occurred (unknowns, low_confidence, conflicts, security_ambiguity)
+
+**Workload Distribution**
+- `files_reviewed`: Total files processed
+- `partitions_created`: Number of work partitions
+- `files_per_partition_avg`: Average files per worker task
+
+**Findings Summary**
+- `critical_issues_total`: Across all workers
+- `standard_violations_total`: Across all workers
+- `suggestions_total`: Across all workers
+
+### Output Format
+
+Append a `_metrics` block to the final aggregated output:
+
+```json
+{
+  "_metrics": {
+    "execution": {
+      "total_invocations": 8,
+      "haiku_invocations": 7,
+      "sonnet_invocations": 1,
+      "escalation_rate": 0.125
+    },
+    "escalations": [
+      {
+        "partition": "AuthService.cs",
+        "reason": "security_ambiguity",
+        "original_model": "haiku",
+        "escalated_model": "sonnet"
+      }
+    ],
+    "workload": {
+      "files_reviewed": 12,
+      "partitions_created": 8,
+      "technologies": ["csharp", "sql"]
+    },
+    "findings": {
+      "critical": 1,
+      "standard_violations": 4,
+      "suggestions": 7,
+      "positive_notes": 3
+    },
+    "cost_estimate": {
+      "note": "Approximate based on typical token counts",
+      "haiku_tokens_approx": 28000,
+      "sonnet_tokens_approx": 4000,
+      "estimated_savings_vs_all_sonnet": "~75%"
+    }
+  }
+}
+```
+
+### Cost Estimation Heuristics
+
+For approximate cost tracking without API-level instrumentation:
+
+| Component | Estimated Tokens |
+|-----------|------------------|
+| Standards file (each) | ~2,500 |
+| Average file diff | ~500-1,500 |
+| Worker prompt overhead | ~300 |
+| Worker response (typical) | ~800 |
+
+Use these to estimate:
+- `haiku_tokens_approx = haiku_invocations × (standards_tokens + avg_diff_tokens + overhead + response)`
+- `sonnet_tokens_approx = sonnet_invocations × (same formula)`
+
+### Savings Calculation
+
+```
+all_sonnet_cost = total_invocations × sonnet_rate
+actual_cost = (haiku_invocations × haiku_rate) + (sonnet_invocations × sonnet_rate)
+savings_percent = (all_sonnet_cost - actual_cost) / all_sonnet_cost × 100
+```
+
+Rate reference (per 1M tokens, as of skill creation):
+- Haiku: ~$0.25 input / $1.25 output
+- Sonnet: ~$3 input / $15 output
+
+### Metrics Usage
+
+The `_metrics` block enables:
+- Comparing costs across PRs of different sizes
+- Tuning escalation thresholds (if escalation_rate is too high, consider adjusting criteria)
+- Identifying hot spots (which partitions consistently escalate?)
+- Validating the model tiering strategy over time
+
+---
+
 ## Explicit Prohibitions
 
 The batch skill must NEVER:

@@ -1,11 +1,11 @@
 ---
 name: Batch Code Analysis Skill
-description: Orchestrates parallel code reviews by delegating batched analysis to code-review-skill workers
+description: Orchestrates parallel code reviews by delegating batched analysis to code-review-agent workers
 ---
 
 # Batch Code Analysis Skill
 
-You are an orchestration skill responsible for performing scalable, parallel code reviews by delegating bounded analysis tasks to `code-review-skill`.
+You are an orchestration skill responsible for performing scalable, parallel code reviews by delegating bounded analysis tasks to `code-review-agent`.
 
 This skill **must not perform detailed code review itself**. Its job is to:
 - prepare grounded inputs,
@@ -65,6 +65,36 @@ Determine applicable standards based on technologies detected:
 - Angular / TypeScript (`.ts`, `.html` files in Angular context)
 - SQL Server (`.sql` files or embedded SQL in C#)
 
+Detecting Embedded SQL in Repository Code
+
+  When reviewing repository/data access layer code (e.g., files with "Repository", "DataAccess", "Dal" in the path or name), check for embedded SQL queries even if the primary language is C#/Java/etc.
+
+  Indicators of embedded SQL:
+  - String literals containing SQL keywords: SELECT, INSERT, UPDATE, DELETE, FROM, WHERE
+  - ORM/data access patterns:
+    - Dapper: connection.QueryAsync<T>("SELECT ..."), connection.ExecuteAsync("INSERT ...")
+    - ADO.NET: SqlCommand, cmd.CommandText = "SELECT ..."
+    - Entity Framework raw SQL: FromSqlRaw(), ExecuteSqlRaw()
+    - JDBC: executeQuery("SELECT ..."), executeUpdate("INSERT ...")
+
+  Action required:
+  If embedded SQL is detected, load both the primary language standards (C#, Java, etc.) and SQL Server standards, then pass both to workers.
+
+  Example:
+  // Detected: DeviceRegistrationRepository.cs contains:
+  private static string GetCustomerSql()
+  {
+      return @"SELECT [Id], [Name] FROM [dbo].[Customer] WHERE [Id] = @CustomerId";
+  }
+
+
+  Workers should review:
+  - C# aspects: method naming, string formatting, parameterization usage
+  - SQL aspects: schema prefixes, parameterization, column naming, data types
+
+  ⚠️ Do not skip SQL standards even if SQL is "just strings" in the code - query quality, injection protection, and standards adherence are critical.
+
+
 ### Loading Standards from ai-instructions Repository
 
 **First**, ensure the ai-instructions repository is available:
@@ -109,11 +139,11 @@ Each task must include:
 
 ---
 
-## Step 4: Delegate to `code-review-skill`
+## Step 4: Delegate to `code-review-agent`
 
 For each partition:
 
-- Invoke `code-review-skill` using the Task tool
+- Invoke `code-review-agent` using the Task tool
 - Default model: **haiku** (Haiku 4.5)
 - Provide:
   - Code snippet(s)
@@ -123,7 +153,7 @@ For each partition:
   - Explicit instruction:
     > "Do not infer beyond provided inputs."
 
-Workers must return **JSON only** per the `code-review-skill` schema.
+Workers must return **JSON only** per the `code-review-agent` schema.
 
 ---
 

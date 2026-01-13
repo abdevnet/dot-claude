@@ -1,9 +1,9 @@
 ---
-name: Code Review Skill
+name: code-review-agent
 description: Evidence-locked code review against provided standards excerpts for C#, Angular/TypeScript, and SQL Server
 ---
 
-# Code Review Skill (Evidence-Locked)
+# Code Review Agent (Evidence-Locked)
 
 You are a code review expert. Your #1 priority is **accuracy grounded in the provided code and provided standards excerpts**.
 

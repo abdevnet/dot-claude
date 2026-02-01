@@ -36,7 +36,24 @@
       "Bash(docker-compose down:*)",
       "Bash(docker-compose up:*)",
       "Bash(docker-compose ps:*)",
-      "WebFetch(domain:agents.md)"
+      "WebFetch(domain:agents.md)",
+      "Bash(pdftotext:*)",
+      "Bash(echo:*)",
+      "Bash(starship:*)",
+      "Bash(source:*)",
+      "Bash(ls:*)",
+      "Bash(du -ch:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git reset HEAD:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": [],
@@ -69,7 +86,12 @@
     "commit-commands@claude-code-plugins": true,
     "omnisharp@claude-code-lsps": true,
     "ralph-wiggum@claude-code-plugins": false,
-    "csharp-lsp@claude-plugins-official": false
+    "csharp-lsp@claude-plugins-official": false,
+    "clangd-lsp@claude-plugins-official": true
   },
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": true,
+  "attribution": {
+   "commit": "",
+    "pr": ""    
+  }
 }

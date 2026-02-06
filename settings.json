@@ -1,4 +1,8 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "permissions": {
     "allow": [
       "mcp__playwright__browser_navigate",
@@ -90,8 +94,5 @@
     "clangd-lsp@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
-  "attribution": {
-   "commit": "",
-    "pr": ""    
-  }
+  "effortLevel": "medium"
 }

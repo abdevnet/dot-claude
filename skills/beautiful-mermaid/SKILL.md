@@ -1,8 +1,9 @@
 ---
 name: beautiful-mermaid
-description: Best practices for creating Mermaid diagrams using the beautiful-mermaid library
+description: Creates polished, professional Mermaid diagrams using the beautiful-mermaid rendering library with advanced theming support. Use when user asks to create a diagram, make a flowchart, draw a sequence diagram, visualize a class hierarchy, create an ER diagram, make a state diagram, or any request involving Mermaid syntax, .mermaid files, or visual representations of workflows, architectures, and relationships. Supports flowcharts, state diagrams, sequence diagrams, class diagrams, and ER diagrams with built-in themes, CSS variable customization, and both SVG and ASCII output via the renderMermaid API.
 metadata:
-  tags: mermaid, diagrams, svg, ascii, flowchart, sequence, class, er, stateDiagram
+  tags: [mermaid, diagrams, svg, ascii, flowchart, sequence, class, er, state-diagram, theming]
+  version: 1.0.0
 ---
 
 ## When to use

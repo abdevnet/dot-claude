@@ -8,6 +8,8 @@
 !commands/
 !settings.json
 !statusline.sh
+!RTK.md
+
 
 # Allow contents inside those folders
 !agents/**

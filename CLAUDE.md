@@ -75,3 +75,5 @@ Clean up intermediate HTML files after PDF generation.
 - Remove dep: `uv remove <pkg>`
 - Run script: `uv run python script.py`
 - Run tests: `uv run pytest`
+
+@RTK.md

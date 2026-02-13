@@ -1,5 +1,5 @@
 ---
-name: Batch Code Analysis Skill
+name: batch-code-analysis-skill
 description: Orchestrates parallel code reviews by delegating batched analysis to code-review-agent workers
 ---
 

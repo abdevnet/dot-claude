@@ -57,7 +57,18 @@
       "Bash(git push:*)",
       "Bash(git reset HEAD:*)",
       "Bash(cp:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(defaults read:*)",
+      "Bash(plutil:*)",
+      "Bash(ps:*)",
+      "Bash(xargs:*)",
+      "Bash(ghostty:*)",
+      "Bash(xcrun simctl runtime delete:*)",
+      "Bash(xcrun simctl:*)",
+      "Bash(du:*)",
+      "Bash(colima list:*)",
+      "Bash(colima start:*)",
+      "Bash(docker:*)"
     ],
     "deny": [],
     "ask": [],
@@ -83,31 +94,21 @@
           }
         ]
       }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/andybarker/.claude/hooks/rtk-rewrite.sh"
-          }
-        ]
-      }
     ]
   },
-  "enabledPlugins": {
-    "superpowers@superpowers-marketplace": false,
-    "commit-commands@claude-code-plugins": true,
-    "omnisharp@claude-code-lsps": true,
-    "ralph-wiggum@claude-code-plugins": false,
-    "csharp-lsp@claude-plugins-official": false,
-    "clangd-lsp@claude-plugins-official": true
-  },
-  "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh"
-  }
+  },
+  "enabledPlugins": {
+    "superpowers@superpowers-marketplace": false,
+    "commit-commands@claude-code-plugins": false,
+    "omnisharp@claude-code-lsps": false,
+    "ralph-wiggum@claude-code-plugins": false,
+    "csharp-lsp@claude-plugins-official": false,
+    "clangd-lsp@claude-plugins-official": false,
+    "obsidian@obsidian-skills": true
+  },
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "medium"
 }

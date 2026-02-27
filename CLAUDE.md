@@ -76,4 +76,26 @@ Clean up intermediate HTML files after PDF generation.
 - Run script: `uv run python script.py`
 - Run tests: `uv run pytest`
 
-@RTK.md
+## Jira (ISFS Project)
+
+When creating Jira tickets, use the Atlassian MCP server tools (`mcp__atlassian__jira_*`) and refer to this section for valid issue types and common properties.
+
+**Valid Issue Types:**
+- `ProdBug` — Production bugs
+- `New Feature` — Net-new functionality
+- `Improvement` — Enhancements to existing features
+- `Technical Debt` — Modernization, refactoring
+- `Task` — General work items
+
+**Common Properties (copy from reference ticket when applicable):**
+- `priority` — Minor, Major, etc. (prefer minor)
+- `assignee` — email address (e.g. abarker@swankmp.com)
+- `components` — e.g. "Tv Device Api" - load full component list from @jira-isfs.md
+
+**User questions
+- Ask user if they want to add acceptance tests.  
+- Use this test syntax if they say yes
+  - Given ...
+  - When ...
+  - Then ... 
+

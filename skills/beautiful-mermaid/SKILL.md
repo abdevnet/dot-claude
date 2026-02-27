@@ -70,3 +70,59 @@ node ~/.claude/skills/beautiful-mermaid/render-svg.mjs /tmp/diagram.mmd docs/dia
 # Clean up
 rm /tmp/diagram.mmd
 ```
+
+## Converting SVG to PNG
+
+The rendered SVGs use CSS custom properties (`var(--bg)`, `var(--fg)`, etc.) for theming. Tools like `rsvg-convert` cannot resolve CSS variables, producing images with invisible text and broken backgrounds. **Always use Chrome headless** for SVG-to-PNG conversion.
+
+1. Create a minimal HTML wrapper that sets the background color to match the theme and embeds the SVG as an `<img>`:
+
+```html
+<!-- /tmp/svg-wrapper.html -->
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { margin: 0; padding: 0; }
+body { background: #0d1117; }
+</style>
+</head>
+<body>
+<img src="file:///absolute/path/to/diagram.svg" />
+</body>
+</html>
+```
+
+2. Screenshot with Chrome headless (adjust `--window-size` to fit the diagram):
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless --disable-gpu \
+  --window-size=1800,2200 \
+  --screenshot="output.png" \
+  "file:///tmp/svg-wrapper.html"
+```
+
+3. Clean up the wrapper HTML.
+
+### Theme background colors
+
+Use the matching background color in the HTML wrapper `body` style:
+
+| Theme | Background |
+|-------|-----------|
+| `github-dark` | `#0d1117` |
+| `github-light` | `#ffffff` |
+| `tokyo-night` | `#1a1b26` |
+| `tokyo-night-storm` | `#24283b` |
+| `tokyo-night-light` | `#d5d6db` |
+| `catppuccin-mocha` | `#1e1e2e` |
+| `catppuccin-latte` | `#eff1f5` |
+| `dracula` | `#282a36` |
+| `nord` | `#2e3440` |
+| `nord-light` | `#eceff4` |
+| `solarized-dark` | `#002b36` |
+| `solarized-light` | `#fdf6e3` |
+| `one-dark` | `#282c34` |
+| `zinc-dark` | `#09090b` |
+| `zinc-light` | `#ffffff` |

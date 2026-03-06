@@ -31,5 +31,8 @@ Search `/Users/andybarker/projects/obsidian/dev-projects/Projects/` for a `.md` 
 - Load only the current project note
 - Say: "No linked projects found — loaded context for `<repo-name>` only."
 
-### Step 4 — Stay scoped
-Do not load the full vault. Do not read the Dashboard. Only read: the current project note + its directly linked project notes (one hop only).
+### Step 4 — Load relevant product data.
+Search `/Users/andybarker/projects/obsidian/dev-projects/Products/` look for any product info that may be relevant. Look at the tags for example if in a project folder that contains widevine code look for widevine tags or drm tags.
+
+### Step 5 — Stay scoped 
+Do not load the full vault. Do not read the Dashboard. Only read: the current project note + its directly linked project notes (one hop only) and any related product data.

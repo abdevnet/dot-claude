@@ -2,7 +2,7 @@
 - Keep responses concise and focused.
 - Avoid generating extra documents, summaries, or plans unless I specifically ask for them.
 - Always use the batch-code-analysis-skill when asked to review multiple files or a PR. The batch skill will automatically:
-  - Load standards from ~/projects/ai-instructions/
+  - Load bundled standards from skill references/standards/
   - Partition work into parallel tasks
   - Delegate to code-review-agent workers (Haiku 4.5)
   - Escalate to Sonnet 4.5 when needed

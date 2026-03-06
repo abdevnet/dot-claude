@@ -105,10 +105,10 @@
     "commit-commands@claude-code-plugins": false,
     "omnisharp@claude-code-lsps": false,
     "ralph-wiggum@claude-code-plugins": false,
-    "csharp-lsp@claude-plugins-official": false,
-    "clangd-lsp@claude-plugins-official": false,
-    "obsidian@obsidian-skills": true
+    "csharp-lsp@claude-plugins-official": true,
+    "clangd-lsp@claude-plugins-official": true,
+    "obsidian@obsidian-skills": true,
+    "skill-creator@claude-plugins-official": true
   },
-  "alwaysThinkingEnabled": true,
-  "effortLevel": "medium"
+  "alwaysThinkingEnabled": true
 }

@@ -21,9 +21,11 @@ Use `AskUserQuestion` to ask which project if not specified. Default to **ISFS**
 1. Gather requirements from user (summary, description, type)
 2. Determine issue type (see below)
 3. Use the `AskUserQuestion` tool to ask: "Would you like to add acceptance tests to this ticket?"
-4. If yes, write acceptance tests using Given/When/Then syntax and include in the description
-5. Ask about component assignment — load the appropriate component list for the selected project
-6. Create the ticket via `mcp__atlassian__jira_create_issue`
+4. If yes, write acceptance tests using Given/When/Then syntax and pass via `customfield_12901` in `additional_fields`
+5. Use the `AskUserQuestion` tool to ask: "Should this ticket be assigned to you or left unassigned?"
+6. If assigned, use `abarker@swankmp.com`. If unassigned, omit the `assignee` parameter.
+7. Ask about component assignment — load the appropriate component list for the selected project
+8. Create the ticket via `mcp__atlassian__jira_create_issue`
 
 ## Issue Types
 
@@ -38,22 +40,17 @@ Use `AskUserQuestion` to ask which project if not specified. Default to **ISFS**
 ## Default Properties
 
 - **priority**: Prefer `Minor` unless user specifies otherwise
-- **assignee**: `abarker@swankmp.com` (unless user specifies otherwise)
+- **assignee**: Ask user — either `abarker@swankmp.com` or unassigned
 - **components**: Match from the project's component list (see Resources below)
 
 ## Acceptance Tests (Optional)
 
-Use `AskUserQuestion` to confirm before adding. When the user opts in, format tests in the description as:
+Use `AskUserQuestion` to confirm before adding. When the user opts in, write acceptance tests using Given/When/Then syntax and put them in the **dedicated custom field**, NOT in the description.
 
-```
-h3. Acceptance Tests
-
-* *Given* [precondition]
-* *When* [action]
-* *Then* [expected result]
-```
-
-Use Jira wiki markup (not markdown) in issue descriptions.
+- **Custom field**: `customfield_12901` (named "Acceptance Tests")
+- **Pass via `additional_fields`** on create, e.g.: `{"priority": {"name": "Minor"}, "customfield_12901": "- Given ... When ... Then ...\n- Given ... When ... Then ..."}`
+- **Format**: Plain text with `- Given ... When ... Then ...` per line (one test per line, separated by newlines)
+- Keep the description for context, scope, and requirements only — no acceptance tests in the description.
 
 ## Example
 

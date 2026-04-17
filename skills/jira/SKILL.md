@@ -1,11 +1,13 @@
 ---
 name: jira
-description: Create and manage Jira tickets using Atlassian MCP server tools (mcp__atlassian__jira_*). Use when the user asks to create a Jira ticket, file a bug, create a feature request, log technical debt, add an improvement, or any task involving Jira issue management. Triggers on mentions of "Jira", "ticket", "issue", "bug report", or "feature request" in the context of project tracking.
+description: Create and manage Jira tickets using whichever Atlassian MCP server is available in the session. Use when the user asks to create a Jira ticket, file a bug, create a feature request, log technical debt, add an improvement, or any task involving Jira issue management. Triggers on mentions of "Jira", "ticket", "issue", "bug report", or "feature request" in the context of project tracking.
 ---
 
 # Jira Ticket Management
 
-Use `mcp__atlassian__jira_*` MCP tools for all Jira operations.
+Use whichever Atlassian MCP Jira tools are available in the current session for all Jira operations. Common server prefixes include `mcp__atlassian__*` (local Docker-backed) and hosted variants like `mcp__<uuid>__*JiraIssue*`. Pick any one that exposes equivalent create/search/update/transition operations.
+
+The site is `swankmp.atlassian.net` — pass that (or the equivalent cloudId) as required by the chosen server.
 
 ## Supported Projects
 
@@ -25,7 +27,7 @@ Use `AskUserQuestion` to ask which project if not specified. Default to **ISFS**
 5. Use the `AskUserQuestion` tool to ask: "Should this ticket be assigned to you or left unassigned?"
 6. If assigned, use `abarker@swankmp.com`. If unassigned, omit the `assignee` parameter.
 7. Ask about component assignment — load the appropriate component list for the selected project
-8. Create the ticket via `mcp__atlassian__jira_create_issue`
+8. Create the ticket via the chosen server's create-issue tool (e.g. `mcp__atlassian__jira_create_issue` or `createJiraIssue`)
 
 ## Issue Types
 
@@ -60,7 +62,7 @@ User: "Create a ticket for adding retry logic to the Tv Device Api"
 → Component: `Tv Device Api`
 → Priority: `Minor`
 → AskUserQuestion: "Would you like to add acceptance tests to this ticket?"
-→ Create with `mcp__atlassian__jira_create_issue`
+→ Create via the available Atlassian create-issue tool
 
 ## Resources
 

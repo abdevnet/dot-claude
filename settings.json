@@ -68,7 +68,10 @@
       "Bash(du:*)",
       "Bash(colima list:*)",
       "Bash(colima start:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(git remote:*)",
+      "Bash(pwd)",
+      "Bash(pwd:*)"
     ],
     "deny": [],
     "ask": [],
@@ -109,8 +112,21 @@
     "clangd-lsp@claude-plugins-official": true,
     "obsidian@obsidian-skills": true,
     "skill-creator@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "andrej-karpathy-skills@karpathy-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "karpathy-skills": {
+      "source": {
+        "source": "github",
+        "repo": "forrestchang/andrej-karpathy-skills"
+      }
+    }
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "xhigh",
+  "autoDreamEnabled": true,
+  "skipDangerousModePermissionPrompt": true,
   "voiceEnabled": true
 }

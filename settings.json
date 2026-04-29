@@ -128,5 +128,8 @@
   "effortLevel": "xhigh",
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "voiceEnabled": true
+  "preferredNotifChannel": "ghostty",
+  "remoteControlAtStartup": false,
+  "voiceEnabled": true,
+  "agentPushNotifEnabled": true
 }

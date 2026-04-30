@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-VAULT = Path("/Users/andybarker/projects/obsidian/dev-projects")
+VAULT = Path.home() / "projects" / "obsidian" / "dev-projects"
 OUTPUT = VAULT / "_index.json"
 FOLDERS = ["Projects", "Products", "03 - Concepts", "01 - Raw Sources"]
 SCHEMA_VERSION = 1

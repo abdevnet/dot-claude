@@ -16,12 +16,12 @@ Arguments: `$ARGUMENTS`
 ## Instructions
 
 ### Step 0 — Index preflight
-The vault has a JSON index at `/Users/andybarker/projects/obsidian/dev-projects/_index.json` that lets Steps 2/4/5/6 be answered with `jq` queries instead of folder scans. The index is self-healing — the preflight rebuilds it when it's missing or stale.
+The vault has a JSON index at `$HOME/projects/obsidian/dev-projects/_index.json` that lets Steps 2/4/5/6 be answered with `jq` queries instead of folder scans. The index is self-healing — the preflight rebuilds it when it's missing or stale.
 
 ```bash
-INDEX=/Users/andybarker/projects/obsidian/dev-projects/_index.json
-VAULT=/Users/andybarker/projects/obsidian/dev-projects
-BUILD=/Users/andybarker/.claude/commands/my-world/scripts/build_index.py
+INDEX=$HOME/projects/obsidian/dev-projects/_index.json
+VAULT=$HOME/projects/obsidian/dev-projects
+BUILD=$HOME/.claude/commands/my-world/scripts/build_index.py
 SCHEMA=1
 
 stale=0
@@ -48,7 +48,7 @@ fi
 The `find -newer` checks catch added/modified .md files *and* folder-level changes (adds/deletes bump directory mtime). A `schema_version` mismatch forces a rebuild when this script evolves.
 
 ### Step 1 — Identify the current project
-Look at the current working directory. Extract the repo name from the path (e.g. `/Users/andybarker/projects/sls/widevine-modular-license-server` → repo is `sls`, or `/Users/andybarker/projects/packager` → repo is `packager`).
+Look at the current working directory. Extract the repo name from the path (e.g. `$HOME/projects/sls/widevine-modular-license-server` → repo is `sls`, or `$HOME/projects/packager` → repo is `packager`).
 
 ### Step 2 — Find the matching project note
 Match on the `repo` frontmatter field (which may be a bare name or a path like `~/projects/packager`) or the filename.
@@ -65,9 +65,9 @@ jq -r --arg repo "$REPO" '
 
 **Grep fallback:**
 ```bash
-grep -rl "^repo:.*\\b$REPO\\b" /Users/andybarker/projects/obsidian/dev-projects/Projects/ 2>/dev/null
+grep -rl "^repo:.*\\b$REPO\\b" $HOME/projects/obsidian/dev-projects/Projects/ 2>/dev/null
 # plus filename match:
-find /Users/andybarker/projects/obsidian/dev-projects/Projects -maxdepth 1 -iname "$REPO.md"
+find $HOME/projects/obsidian/dev-projects/Projects -maxdepth 1 -iname "$REPO.md"
 ```
 
 ### Step 3 — Load the project note and linked projects
@@ -114,7 +114,7 @@ jq -r --argjson tags '["widevine","drm","fairplay"]' '
 
 **Grep fallback:**
 ```bash
-grep -rl -E "^  - (widevine|drm|fairplay)$" /Users/andybarker/projects/obsidian/dev-projects/Products/ 2>/dev/null
+grep -rl -E "^  - (widevine|drm|fairplay)$" $HOME/projects/obsidian/dev-projects/Products/ 2>/dev/null
 ```
 
 ### Step 5 — Load relevant concepts
@@ -139,9 +139,9 @@ jq -r \
 **Grep fallback:**
 ```bash
 # Tag overlap
-grep -rl -E "^  - (tag1|tag2|tag3)$" "/Users/andybarker/projects/obsidian/dev-projects/03 - Concepts/" 2>/dev/null
+grep -rl -E "^  - (tag1|tag2|tag3)$" "$HOME/projects/obsidian/dev-projects/03 - Concepts/" 2>/dev/null
 # Wikilink to current or linked project/product
-grep -rlF -e "[[<current>]]" -e "[[<dep1>]]" -e "[[<dep2>]]" "/Users/andybarker/projects/obsidian/dev-projects/03 - Concepts/" 2>/dev/null
+grep -rlF -e "[[<current>]]" -e "[[<dep1>]]" -e "[[<dep2>]]" "$HOME/projects/obsidian/dev-projects/03 - Concepts/" 2>/dev/null
 ```
 
 Union the candidates, then read all matches in a single batched tool call. Concepts are cross-cutting reference knowledge — they often explain the "why" behind what the code does. If the candidate list is large (>8), prefer concepts that share **2+ tags** with the project over single-tag matches.
@@ -161,7 +161,7 @@ jq -r --argjson links '["packager","swankdrm-database","shaka-packager"]' '
 
 **Grep fallback:**
 ```bash
-{ grep -rl "^processed: false$" "/Users/andybarker/projects/obsidian/dev-projects/01 - Raw Sources/" \
+{ grep -rl "^processed: false$" "$HOME/projects/obsidian/dev-projects/01 - Raw Sources/" \
     | xargs grep -lF -e "[[<current>]]" -e "[[<dep1>]]"; } 2>/dev/null || true
 ```
 

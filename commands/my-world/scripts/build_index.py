@@ -113,7 +113,7 @@ def main() -> int:
                 continue
             fm = parse_frontmatter(text)
             rec = {
-                "file": str(path.relative_to(VAULT)),
+                "file": path.relative_to(VAULT).as_posix(),
                 "folder": folder,
                 "title": path.stem,
                 "tags": fm.get("tags") or [],

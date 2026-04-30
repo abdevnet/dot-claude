@@ -75,7 +75,7 @@
     ],
     "deny": [],
     "ask": [],
-    "defaultMode": "default"
+    "defaultMode": "auto"
   },
   "hooks": {
     "UserPromptSubmit": [
@@ -140,6 +140,7 @@
   "skipDangerousModePermissionPrompt": true,
   "preferredNotifChannel": "ghostty",
   "remoteControlAtStartup": false,
+  "agentPushNotifEnabled": true,
   "voiceEnabled": true,
-  "agentPushNotifEnabled": true
+  "skipAutoPermissionPrompt": true
 }

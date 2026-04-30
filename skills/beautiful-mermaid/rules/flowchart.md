@@ -19,6 +19,31 @@ graph TD
   C --> D
 ```
 
+## Labels and line breaks
+
+Beautiful-mermaid renders each label as a single line of text. **None of the standard Mermaid line-break syntaxes work here** — `<br/>`, `<br>`, `\n`, and literal newlines all render as visible characters in the label.
+
+Quoted labels also keep their quote characters in the rendered text — `A["foo"]` shows `"foo"`. Use unquoted labels (`A[foo]`) unless the label contains a character that breaks the parser (e.g. `()`, `[]`, `{}`, `|`).
+
+If a label is too long for one line, split it across multiple connected nodes rather than forcing a wrap:
+
+```mermaid
+graph TD
+  parse[Parse TOML body] --> validate[Validate required fields]
+  validate --> provision[Call TV Device API]
+```
+
+Or use a subgraph with a heading to carry contextual detail:
+
+```mermaid
+graph TD
+  subgraph parser [Parser stage — TOML → struct]
+    a[bed_count] --> b[byod_enabled] --> c[ip_rules]
+  end
+```
+
+This is a real divergence from upstream Mermaid; if you copy a diagram from elsewhere it may need rewriting.
+
 ## Node Shapes
 
 | Shape | Syntax | Use for |

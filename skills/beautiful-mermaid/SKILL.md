@@ -40,74 +40,73 @@ Read individual rule files for detailed syntax, examples, and configuration:
 
 6. **Output the raw Mermaid text** in a fenced code block tagged `mermaid` so the user can copy and render it.
 
-## Rendering to SVG
+7. **Keep labels to a single short line.** This renderer ignores `<br/>`, `<br>`, `\n`, and literal newlines — they render as visible characters. See [rules/flowchart.md](rules/flowchart.md#labels-and-line-breaks) for the workaround (split across connected nodes; avoid quoted labels unless needed for parser-breaking characters).
 
-When the user asks for an SVG file, use the render script bundled with this skill:
+## Picking the right output
 
-1. Write the mermaid diagram to a temporary `.mmd` file
-2. Ensure `beautiful-mermaid` is installed: `npm ls beautiful-mermaid 2>/dev/null || npm install beautiful-mermaid`
-3. Run: `node ~/.claude/skills/beautiful-mermaid/render-svg.mjs <input.mmd> <output.svg> [theme]`
-4. Clean up the `.mmd` file after rendering
+**Default to SVG.** Render the SVG, show the user the file path, and stop there. SVG renders in a single subprocess (~1s); PNG adds Chrome headless on top, takes 5–8s, and needs sandbox-disabled execution on macOS — every PNG is a noticeable delay. Most uses (Confluence, README embeds, viewing in an editor, sharing as a file) work directly off the SVG.
+
+**Only render PNG when the user explicitly asks** (e.g. "give me a PNG", "I need to paste this into Slack/Teams/email", "make me an image"). If you've already rendered the SVG and the user might want a PNG, ask: *"Want me to also render a PNG?"* — don't speculatively render both.
+
+| Goal | Use this |
+|------|----------|
+| Quick structural check while iterating | `renderMermaidAscii` (instant, terminal-friendly) |
+| Default deliverable — embedding, sharing, viewing | SVG via `render-svg.mjs` |
+| User explicitly asked for an image file | PNG via `render-png.mjs` (after asking, if intent is unclear) |
+
+For ASCII, write a tiny one-off node script — there's no bundled CLI for it. Useful when you're not sure the structure is right and don't want to pay for a screenshot round-trip.
+
+## Rendering to SVG or PNG
+
+Both bundled scripts assume `beautiful-mermaid` is on the user's `node_modules` path. Check once per session:
+
+```bash
+npm ls beautiful-mermaid 2>/dev/null || npm install beautiful-mermaid
+```
+
+### SVG
+
+```bash
+node ~/.claude/skills/beautiful-mermaid/render-svg.mjs <input.mmd> <output.svg> [theme]
+```
+
+### PNG (one-shot)
+
+`render-png.mjs` does the full pipeline: SVG render → HTML wrapper with the right background → Chrome headless screenshot → cleanup. Window size auto-fits the SVG's intrinsic dimensions, so you don't have to guess.
+
+```bash
+node ~/.claude/skills/beautiful-mermaid/render-png.mjs <input.mmd> <output.png> [theme] [width] [height]
+```
+
+`width`/`height` are optional overrides; omit them to use the SVG's native size + 40px padding.
+
+### Chrome headless gotchas (macOS)
+
+Two issues you'll hit on a default macOS Claude Code setup:
+
+- **Sandbox blocks Chrome's profile and crashpad directories.** You'll see `open ~/Library/Application Support/Google/Chrome/Crashpad/...: Operation not permitted` and the screenshot won't be written. Re-run the Bash tool call with `dangerouslyDisableSandbox: true`. (`render-png.mjs` always uses a fresh `--user-data-dir` under `$TMPDIR`, but Chrome still touches `~/Library/...` for crashpad.)
+- **Concurrent Chrome runs collide on the default profile dir.** `render-png.mjs` mints a unique profile per invocation, so back-to-back renders don't conflict.
+
+If you call Chrome by hand instead of using `render-png.mjs`, do both yourself: pass `--user-data-dir=$(mktemp -d)` and run with sandbox off.
 
 Available themes: `zinc-light`, `zinc-dark`, `tokyo-night`, `tokyo-night-storm`, `tokyo-night-light`, `catppuccin-mocha`, `catppuccin-latte`, `nord`, `nord-light`, `dracula`, `github-light`, `github-dark`, `solarized-light`, `solarized-dark`, `one-dark`
 
-Example:
+Example end-to-end:
 ```bash
-# Write diagram to temp file
 cat <<'EOF' > /tmp/diagram.mmd
 classDiagram
   class Foo {
     +bar() void
   }
 EOF
-
-# Ensure dependency is available
 npm ls beautiful-mermaid 2>/dev/null || npm install beautiful-mermaid
-
-# Render with optional theme
-node ~/.claude/skills/beautiful-mermaid/render-svg.mjs /tmp/diagram.mmd docs/diagram.svg github-dark
-
-# Clean up
+node ~/.claude/skills/beautiful-mermaid/render-png.mjs /tmp/diagram.mmd docs/diagram.png github-dark
 rm /tmp/diagram.mmd
 ```
 
-## Converting SVG to PNG
+### Theme background colors (reference)
 
-The rendered SVGs use CSS custom properties (`var(--bg)`, `var(--fg)`, etc.) for theming. Tools like `rsvg-convert` cannot resolve CSS variables, producing images with invisible text and broken backgrounds. **Always use Chrome headless** for SVG-to-PNG conversion.
-
-1. Create a minimal HTML wrapper that sets the background color to match the theme and embeds the SVG as an `<img>`:
-
-```html
-<!-- /tmp/svg-wrapper.html -->
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-* { margin: 0; padding: 0; }
-body { background: #0d1117; }
-</style>
-</head>
-<body>
-<img src="file:///absolute/path/to/diagram.svg" />
-</body>
-</html>
-```
-
-2. Screenshot with Chrome headless (adjust `--window-size` to fit the diagram):
-
-```bash
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --headless --disable-gpu \
-  --window-size=1800,2200 \
-  --screenshot="output.png" \
-  "file:///tmp/svg-wrapper.html"
-```
-
-3. Clean up the wrapper HTML.
-
-### Theme background colors
-
-Use the matching background color in the HTML wrapper `body` style:
+`render-png.mjs` resolves these automatically. Listed here for cases where you're hand-rolling the wrapper or need to match a different surface.
 
 | Theme | Background |
 |-------|-----------|

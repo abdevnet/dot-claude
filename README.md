@@ -2,18 +2,27 @@ A collection of skills, agents, commands, hooks, and a statusline for Claude Cod
 
 To use, clone this repo into your local `.claude` folder, or copy the individual folders you want into `~/.claude/`.
 
-## Skills & Agents
+## Skills
 
-The main skills I use are the code-review-skill along with the batch-code-analysis-skill.
+Skills live in `skills/`.
 
-After updating your local `.claude` folder, start Claude Code in the terminal inside your code repo and ask Claude to do a code review.
+- **android-clean-architecture** — Clean Architecture patterns for Android and Kotlin Multiplatform projects: module boundaries, dependency rules, UseCases, Repositories, and data-layer design with Room, SQLDelight, and Ktor.
+- **batch-code-analysis-skill** — Orchestrates parallel code reviews by delegating batched analysis to `code-review-agent` workers. Triggers on requests like "review this PR" or "review these files". Not used for single-file reviews.
+- **beautiful-mermaid** — Generates polished Mermaid diagrams (flowcharts, sequence, class, ER, state) via the `beautiful-mermaid` library with theming support and SVG or ASCII output.
+- **caveman** — Ultra-compressed communication mode. Drops filler, articles, and pleasantries while keeping full technical accuracy. Cuts token usage roughly 75%.
+- **customer-email** — Drafts plain-text customer-facing emails (release announcements, partner updates, support replies) and saves them to `~/Downloads` with a unique filename so prior drafts aren't overwritten.
+- **diagnose** — Disciplined debug loop for hard bugs and performance regressions: reproduce → minimise → hypothesise → instrument → fix → regression-test.
+- **jira** — Creates and manages Jira tickets via whichever Atlassian MCP server is available in the session (local Docker-backed or hosted). Targets `swankmp.atlassian.net`.
 
-There are known issues where Claude doesn't always invoke the skill that it should. I put this line in my main `Claude.MD` file to make sure the skills activate. Some developers use hooks to accomplish this.
+### Obsidian Skills (plugin)
 
-```
-Always use the batch-code-analysis-skill to break the work up into tasks running in parallel when asked to do a code review.
-Each task should use the code-review-skill.
-```
+Installed from the `obsidian-skills` marketplace plugin.
+
+- **obsidian:defuddle** — Extracts clean markdown from web pages via the Defuddle CLI, stripping navigation/ads to save tokens. Use instead of `WebFetch` for standard pages (skip for URLs already ending in `.md`).
+- **obsidian:json-canvas** — Creates and edits JSON Canvas files (`.canvas`) with nodes, edges, groups, and connections — mind maps, flowcharts, visual canvases.
+- **obsidian:obsidian-bases** — Creates and edits Obsidian Bases (`.base` files): database-like views of notes with filters, formulas, and table/card views.
+- **obsidian:obsidian-cli** — Drives a running Obsidian instance via the `obsidian` CLI to read, create, search, and manage notes; also supports plugin/theme development (reload, run JS, screenshots, DOM inspection).
+- **obsidian:obsidian-markdown** — Authors valid Obsidian Flavored Markdown: wikilinks, embeds, callouts, frontmatter properties, tags, and comments.
 
 ## Statusline
 

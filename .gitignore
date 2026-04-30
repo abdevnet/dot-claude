@@ -8,6 +8,8 @@
 !commands/
 !settings.json
 !statusline.sh
+!play-sound.sh
+!sounds/
 !RTK.md
 !jira-isfs.md
 
@@ -16,6 +18,7 @@
 !agents/**
 !skills/**
 !commands/**
+!sounds/**
 # Keep the .gitignore file itself
 !.gitignore
 

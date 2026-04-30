@@ -84,7 +84,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "afplay /System/Library/Sounds/Hero.aiff"
+            "command": "~/.claude/play-sound.sh permission"
           }
         ]
       },
@@ -93,7 +93,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "afplay /System/Library/Sounds/Submarine.aiff"
+            "command": "~/.claude/play-sound.sh idle"
           }
         ]
       }

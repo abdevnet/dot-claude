@@ -3,6 +3,7 @@ input=$(cat)
 
 MODEL=$(echo "$input" | jq -r '.model.display_name')
 DIR=$(echo "$input" | jq -r '.workspace.current_dir')
+DIR_BASENAME=$(echo "$DIR" | sed 's|.*[\\/]||')
 COST=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
 PCT=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
 DURATION_MS=$(echo "$input" | jq -r '.cost.total_duration_ms // 0')
@@ -22,6 +23,6 @@ MINS=$((DURATION_MS / 60000)); SECS=$(((DURATION_MS % 60000) / 1000))
 BRANCH=""
 git rev-parse --git-dir > /dev/null 2>&1 && BRANCH=" | 🕊️ $(git branch --show-current 2>/dev/null)"
 
-echo -e "${GREEN}[$MODEL]${RESET} 📁 ${DIR##*/}$BRANCH"
+echo -e "${GREEN}[$MODEL]${RESET} 📁 ${DIR_BASENAME}$BRANCH"
 COST_FMT=$(printf '$%.2f' "$COST")
 echo -e "${BAR_COLOR}${BAR}${RESET} ${PCT}% | ${GREEN}${COST_FMT}${RESET} | ⏱️ ${MINS}m ${SECS}s"

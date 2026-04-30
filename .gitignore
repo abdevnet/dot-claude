@@ -10,6 +10,7 @@
 !statusline.sh
 !play-sound.sh
 !sounds/
+!hooks/
 !RTK.md
 !jira-isfs.md
 
@@ -19,6 +20,7 @@
 !skills/**
 !commands/**
 !sounds/**
+!hooks/**
 # Keep the .gitignore file itself
 !.gitignore
 

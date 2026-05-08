@@ -25,8 +25,9 @@
 !.gitignore
 
 # Ignore system / editor junk inside allowed folders
-# macOS
+# macOS - always ignore at any depth
 .DS_Store
+**/.DS_Store
 
 # VS Code
 .vscode/

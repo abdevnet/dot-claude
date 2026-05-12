@@ -15,6 +15,7 @@ The site is `swankmp.atlassian.net` — pass that (or the equivalent cloudId) as
 |-------------|-------------|
 | **ISFS** | Internal Systems & Fulfillment Services (default) |
 | **SLS** | Streaming License Server |
+| **VENA** | Prism — Patient Entertainment in-house rewrite (Android TV / tvOS / iPadOS / KMP) |
 
 Use `AskUserQuestion` to ask which project if not specified. Default to **ISFS**.
 
@@ -68,3 +69,4 @@ User: "Create a ticket for adding retry logic to the Tv Device Api"
 
 - **[references/isfs-components.md](references/isfs-components.md)** — ISFS project components. Read when assigning components to ISFS tickets.
 - **[references/sls-components.md](references/sls-components.md)** — SLS project components. Read when assigning components to SLS tickets.
+- **[references/vena-components.md](references/vena-components.md)** — VENA (Prism) project components. Read when assigning components to VENA tickets.

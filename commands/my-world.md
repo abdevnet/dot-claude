@@ -9,172 +9,51 @@ Arguments: `$ARGUMENTS`
 - If arguments contain `fast`, run in **fast mode**.
 - Otherwise, run in **full mode**.
 
-**Fast mode** loads only the current project note and its one-hop dependencies. It skips Products, Concepts, and Raw Sources scans, and skips the `git remote` verification.  Use it when you want quick orientation without broader cross-cutting context.
+**Fast mode** loads only the current project note and its one-hop dependencies. It skips Products, Concepts, and Raw Sources scans, and skips the `git remote` verification. Use it when you want quick orientation without broader cross-cutting context.
 
-**Full mode** does everything below.
+**Full mode** additionally loads related Products and Concepts, lists unprocessed Raw Sources, and resolves the source-control platform.
 
-## Instructions
+Both modes are served by one resolver script — `scripts/resolve.py` — so the whole data-gather is a single tool call. The latency that hurts here is the model waiting on sequential round-trips (the old flow was index-preflight → jq match → batched Reads), not the shell work, which is sub-100ms. Collapsing to one call is the win.
 
-### Step 0 — Index preflight
-The vault has a JSON index at `$HOME/projects/obsidian/dev-projects/_index.json` that lets Steps 2/4/5/6 be answered with `jq` queries instead of folder scans. The index is self-healing — the preflight rebuilds it when it's missing or stale.
+## Fast mode (single call)
 
 ```bash
-INDEX=$HOME/projects/obsidian/dev-projects/_index.json
-VAULT=$HOME/projects/obsidian/dev-projects
-BUILD=$HOME/.claude/commands/my-world/scripts/build_index.py
-SCHEMA=1
-
-stale=0
-if [ ! -f "$INDEX" ]; then
-  stale=1
-elif [ -n "$(find "$VAULT" -name '*.md' -newer "$INDEX" -print -quit 2>/dev/null)" ]; then
-  stale=1
-elif [ -n "$(find "$VAULT" -type d -newer "$INDEX" -print -quit 2>/dev/null)" ]; then
-  stale=1
-elif [ "$(jq -r '.schema_version // 0' "$INDEX" 2>/dev/null)" != "$SCHEMA" ]; then
-  stale=1
-fi
-
-if [ "$stale" = "1" ]; then
-  python3 "$BUILD" && echo INDEX_READY || echo INDEX_FAILED
-else
-  echo INDEX_READY
-fi
+python3 $HOME/.claude/commands/my-world/scripts/resolve.py "$PWD"
 ```
 
-- `INDEX_READY` → use the **indexed queries** shown under each step.
-- `INDEX_FAILED` → use the **grep fallback** shown under each step and mention in the summary that the index rebuild failed.
+Given the working directory, this self-heals the index if a vault note changed, matches the project note (the first path segment after `projects/` is the repo name, so a worktree like `.../sls/fairplay-sdk26` still resolves to `sls`), and prints the project note's body plus the body of every depends-on / depended-on-by project, each under a `===== LABEL: path =====` delimiter. Read stdout and write the summary directly — no Reads, no jq, no `git remote` check.
 
-The `find -newer` checks catch added/modified .md files *and* folder-level changes (adds/deletes bump directory mtime). A `schema_version` mismatch forces a rebuild when this script evolves.
+Handle the leading `#` status lines and these sentinels:
+- `NO_PROJECT_NOTE …` → say "No project note found for `<repo-name>` in the dev-projects vault. You may want to add one," offer to create it (invoke the `obsidian:obsidian-markdown` skill first if they accept), and stop.
+- `# NO_LINKS …` → summarize just the current project and say "No linked projects found — loaded context for `<repo-name>` only."
 
-### Step 1 — Identify the current project
-Look at the current working directory. Extract the repo name from the path (e.g. `$HOME/projects/sls/widevine-modular-license-server` → repo is `sls`, or `$HOME/projects/packager` → repo is `packager`).
+Then produce the summary (below) and stop.
 
-### Step 2 — Find the matching project note
-Match on the `repo` frontmatter field (which may be a bare name or a path like `~/projects/packager`) or the filename.
+## Full mode (single call)
 
-**Indexed query:**
 ```bash
-jq -r --arg repo "$REPO" '
-  .notes[]
-  | select(.folder == "Projects")
-  | select(.title == $repo or .repo == $repo or ((.repo // "") | split("/") | last) == $repo)
-  | .file
-' "$INDEX"
+python3 $HOME/.claude/commands/my-world/scripts/resolve.py "$PWD" --full
 ```
 
-**Grep fallback:**
-```bash
-grep -rl "^repo:.*\\b$REPO\\b" $HOME/projects/obsidian/dev-projects/Projects/ 2>/dev/null
-# plus filename match:
-find $HOME/projects/obsidian/dev-projects/Projects -maxdepth 1 -iname "$REPO.md"
-```
+Same as fast mode, plus three extra sections in the same output:
+- `# source-control:` — GitHub Enterprise (from the note's `github-enterprise` tag, or a detected `swankmp.ghe.com` remote) vs Azure DevOps / other. If it reports a `swankmp.ghe.com` remote and the note lacks the tag, mention that the tag could be added.
+- `===== PRODUCTS … =====` — product notes whose tags overlap the project's tags. Summarize each.
+- `===== CONCEPTS … =====` — concept notes sharing tags with the project **or** wikilinking to the project / a linked project / a matched product. They're ordered by relevance (wikilink match first, then shared-tag count) and annotated with both. Concepts are cross-cutting "why" knowledge — weave the relevant ones into the summary. If the header notes that weaker single-tag matches were dropped, that's the >8-candidate trim; no action needed.
+- `===== UNPROCESSED RAW SOURCES (N) =====` — a listing (title — source URL — related), **not** bodies. Surface these as a "waiting to be distilled" note if N > 0; omit the section entirely if 0.
 
-### Step 3 — Load the project note and linked projects
-1. Read the matching project note.
-2. Parse the `depends-on` and `depended-on-by` frontmatter arrays.
-3. Resolve each `[[wikilink]]` to a `.md` file in the Projects folder and **read all of them in a single batched tool call** (parallel, not sequential).
-4. Check source control platform:
-   - If the project note already has the `github-enterprise` tag, skip the remote check and note GitHub Enterprise (swankmp.ghe.com) in the summary.
-   - Otherwise run `git remote -v`. If the remote points to `swankmp.ghe.com`, add `github-enterprise` to the tags array and note the platform; otherwise assume Azure DevOps.
-5. Summarize what you loaded:
-   - Current project: name, layer, stack, repo, source control platform
-   - Dependencies (depends-on): list with one-line description of each
-   - Dependents (depended-on-by): list with one-line description of each
-   - Any notes or key details from the current project note worth flagging
+## Summary structure
 
-**If NO matching project note exists:**
-- Say: "No project note found for `<repo-name>` in the dev-projects vault. You may want to add one."
-- Do not load anything else
-- Offer to create the project note if the user wants
-- If the user accepts, invoke the `obsidian:obsidian-markdown` skill before writing the file so frontmatter, tags, wikilinks, and any callouts are valid OFM
+Both modes end with a summary covering:
+- **Current project**: name, layer, stack, repo (full mode: source-control platform too)
+- **Dependencies** (depends-on): list with a one-line description of each
+- **Dependents** (depended-on-by): list with a one-line description of each
+- **Full mode**: relevant Products and Concepts woven in, plus the unprocessed-raw-sources flag if any
+- Any notes or key details from the current project note worth flagging
 
-**If there are no `depends-on` or `depended-on-by` links:**
-- Load only the current project note
-- Say: "No linked projects found — loaded context for `<repo-name>` only."
+## Stay scoped
 
----
+The resolver only ever loads one hop out (the project, its direct links, and — in full mode — tag/wikilink-matched products and concepts, plus a raw-source listing). Don't read the full vault or the Dashboard, and don't read raw-source bodies.
 
-**Fast mode stops here.** Skip Steps 4–6 and go straight to Step 7.
+## Fallback
 
----
-
-### Step 4 — Load relevant product data
-Find product notes whose tags overlap with the current project's tags (e.g. widevine, drm, fairplay), then read matches in a single batched tool call.
-
-**Indexed query** (substitute the project's tags):
-```bash
-jq -r --argjson tags '["widevine","drm","fairplay"]' '
-  .notes[]
-  | select(.folder == "Products")
-  | select((.tags // []) | any(. as $t | $tags | index($t)))
-  | .file
-' "$INDEX"
-```
-
-**Grep fallback:**
-```bash
-grep -rl -E "^  - (widevine|drm|fairplay)$" $HOME/projects/obsidian/dev-projects/Products/ 2>/dev/null
-```
-
-### Step 5 — Load relevant concepts
-Find concepts that overlap with the current project on **either** shared tags **or** wikilinks pointing at the current project or its linked projects/products.
-
-**Indexed query** (substitute project tags and linked names):
-```bash
-jq -r \
-  --argjson tags '["drm","widevine","fairplay","hls","cenc"]' \
-  --argjson links '["packager","swankdrm-database","shaka-packager"]' '
-  .notes[]
-  | select(.folder == "03 - Concepts")
-  | select(
-      ((.tags // []) | any(. as $t | $tags | index($t)))
-      or
-      ((.wikilinks // []) | any(. as $w | $links | index($w)))
-    )
-  | .file
-' "$INDEX"
-```
-
-**Grep fallback:**
-```bash
-# Tag overlap
-grep -rl -E "^  - (tag1|tag2|tag3)$" "$HOME/projects/obsidian/dev-projects/03 - Concepts/" 2>/dev/null
-# Wikilink to current or linked project/product
-grep -rlF -e "[[<current>]]" -e "[[<dep1>]]" -e "[[<dep2>]]" "$HOME/projects/obsidian/dev-projects/03 - Concepts/" 2>/dev/null
-```
-
-Union the candidates, then read all matches in a single batched tool call. Concepts are cross-cutting reference knowledge — they often explain the "why" behind what the code does. If the candidate list is large (>8), prefer concepts that share **2+ tags** with the project over single-tag matches.
-
-### Step 6 — Flag unprocessed raw sources (do not read bodies)
-Surface notes where `processed: false` and the `related` array points at the current project, a linked project, or a relevant product.
-
-**Indexed query** (substitute linked names):
-```bash
-jq -r --argjson links '["packager","swankdrm-database","shaka-packager"]' '
-  .notes[]
-  | select(.folder == "01 - Raw Sources" and .processed == false)
-  | select((.related // []) | any(. as $r | $links | index($r)))
-  | .file
-' "$INDEX"
-```
-
-**Grep fallback:**
-```bash
-{ grep -rl "^processed: false$" "$HOME/projects/obsidian/dev-projects/01 - Raw Sources/" \
-    | xargs grep -lF -e "[[<current>]]" -e "[[<dep1>]]"; } 2>/dev/null || true
-```
-
-`grep` exits 1 when it finds nothing — that's normal, not an error. The `|| true` swallows that benign exit (and the downstream empty-input case) so the transcript stays clean.
-
-Do **not** read the body. Just list titles and source URLs. Example output:
-
-> **Unprocessed raw sources (3):** You have 3 clippings related to this project waiting to be distilled — `some-article.md`, `widevine-spec-notes.md`, `team-meeting-2026-04-01.md`. Run the distillation workflow when ready.
-
-If there are none, omit this section entirely.
-
-### Step 7 — Stay scoped
-Do not load the full vault. Do not read the Dashboard. Only read:
-- The current project note
-- Directly linked project notes (one hop only)
-- **Full mode only:** related product notes, related concept notes (tag or wikilink match), and a listing (not bodies) of unprocessed raw sources
+If the resolver errors out (e.g. Python unavailable), the equivalent data lives in the index at `$HOME/projects/obsidian/dev-projects/_index.json` and can be queried with `jq`, or grepped directly from the vault folders (`Projects/`, `Products/`, `03 - Concepts/`, `01 - Raw Sources/`). Rebuild the index with `python3 $HOME/.claude/commands/my-world/scripts/build_index.py`.

@@ -21,7 +21,7 @@ from pathlib import Path
 VAULT = Path.home() / "projects" / "obsidian" / "dev-projects"
 OUTPUT = VAULT / "_index.json"
 FOLDERS = ["Projects", "Products", "03 - Concepts", "01 - Raw Sources"]
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 WIKILINK_RE = re.compile(r"\[\[([^\]\n]+?)\]\]")
 
@@ -96,11 +96,8 @@ def wikilink_targets(values) -> list[str]:
     return out
 
 
-def main() -> int:
-    if not VAULT.is_dir():
-        print(f"vault not found: {VAULT}", file=sys.stderr)
-        return 1
-
+def build_payload() -> dict:
+    """Scan the vault folders and return the index payload (does not write)."""
     notes = []
     for folder in FOLDERS:
         root = VAULT / folder
@@ -126,17 +123,30 @@ def main() -> int:
             elif folder == "01 - Raw Sources":
                 rec["processed"] = bool(fm.get("processed", False))
                 rec["related"] = wikilink_targets(fm.get("related"))
+                rec["source"] = fm.get("source") or ""
             notes.append(rec)
 
-    payload = {
+    return {
         "schema_version": SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "vault_root": str(VAULT),
         "note_count": len(notes),
         "notes": notes,
     }
+
+
+def write_index(payload: dict) -> None:
     OUTPUT.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    print(f"wrote {OUTPUT} ({len(notes)} notes)")
+
+
+def main() -> int:
+    if not VAULT.is_dir():
+        print(f"vault not found: {VAULT}", file=sys.stderr)
+        return 1
+
+    payload = build_payload()
+    write_index(payload)
+    print(f"wrote {OUTPUT} ({payload['note_count']} notes)")
     return 0
 
 

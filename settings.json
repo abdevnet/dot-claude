@@ -126,7 +126,8 @@
     "swift-lsp@claude-plugins-official": true,
     "andrej-karpathy-skills@karpathy-skills": true,
     "swank-standards@swank-internal": false,
-    "shortcuts-playground@shortcuts-playground": true
+    "shortcuts-playground@shortcuts-playground": true,
+    "plannotator@plannotator": true
   },
   "extraKnownMarketplaces": {
     "karpathy-skills": {
@@ -146,6 +147,12 @@
         "source": "git",
         "url": "https://github.com/viticci/shortcuts-playground-plugin.git"
       }
+    },
+    "plannotator": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/andybarker/projects/claude-playarea/plannotator"
+      }
     }
   },
   "alwaysThinkingEnabled": true,
@@ -156,5 +163,6 @@
   "remoteControlAtStartup": false,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "tui": "fullscreen"
 }

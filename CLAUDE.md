@@ -29,6 +29,7 @@
 
     Rules for Git:
     - Destructive Git commands require explicit user confirmation and a backup suggestion.
+    - Never add "Claude-Session:" lines or any session-link/attribution trailers to commit messages.
     - Prefer safe alternatives:
       - git status, git diff
       - git reset --soft or --mixed
@@ -75,6 +76,15 @@ Clean up intermediate HTML files after PDF generation.
 - Remove dep: `uv remove <pkg>`
 - Run script: `uv run python script.py`
 - Run tests: `uv run pytest`
+
+## SQL Server Access (Kerberos on Mac)
+
+- Prod SQL Servers (e.g. SGC on psqlb7sm100.swankmp.local) require Windows auth via Kerberos.
+- I must run `kinit abarker@SWANKMP.LOCAL` myself in a separate Terminal tab (in-session `!` can't prompt for a password).
+- Query with the ODBC sqlcmd: `/opt/homebrew/opt/mssql-tools18/bin/sqlcmd -S <server> -d <db> -E -C`
+- Do NOT use the homebrew go-sqlcmd (`/opt/homebrew/bin/sqlcmd`) with `-E` — it lacks Kerberos and fails with "Login failed for user ''".
+- `klist` and `sqlcmd -E` need the Bash sandbox disabled (sandbox blocks the macOS Kerberos cache daemon).
+- Dev (dsql-primary.swankmp.local) accepts SQL auth with app logins found in repo appsettings files.
 
 ## Jira (ISFS Project)
 

@@ -26,14 +26,12 @@
       "Bash(curl:*)",
       "Bash(dotnet-script:*)",
       "WebFetch(domain:gist.github.com)",
-      "Bash(chmod:*)",
       "Bash(docker run:*)",
       "Bash(./setup-monitoring.sh)",
       "mcp__playwright__browser_file_upload",
       "mcp__playwright__browser_wait_for",
       "mcp__playwright__browser_take_screenshot",
       "Bash(docker-compose logs:*)",
-      "Bash(python3:*)",
       "Bash(docker-compose restart:*)",
       "Bash(docker logs:*)",
       "Bash(docker exec:*)",
@@ -57,11 +55,9 @@
       "Bash(git push:*)",
       "Bash(git reset HEAD:*)",
       "Bash(cp:*)",
-      "Bash(rm:*)",
       "Bash(defaults read:*)",
       "Bash(plutil:*)",
       "Bash(ps:*)",
-      "Bash(xargs:*)",
       "Bash(ghostty:*)",
       "Bash(xcrun simctl runtime delete:*)",
       "Bash(xcrun simctl:*)",
@@ -77,7 +73,6 @@
     "ask": [],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -137,12 +132,6 @@
         "repo": "forrestchang/andrej-karpathy-skills"
       }
     },
-    "swank-internal": {
-      "source": {
-        "source": "git",
-        "url": "https://swankmp.ghe.com/development/claude-plugins.git"
-      }
-    },
     "shortcuts-playground": {
       "source": {
         "source": "git",
@@ -158,13 +147,56 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "xhigh"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    }
+  },
   "tui": "fullscreen",
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
-  "preferredNotifChannel": "ghostty",
+  "preferredNotifChannel": "auto",
   "remoteControlAtStartup": false,
+  "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
+  "autoMode": {
+    "soft_deny": [
+      "$defaults",
+      "Bash(aspire stop:*) — stops every resource in the running AppHost; only when the user asks for a stop or restart",
+      "Bash(kinit:*) and Bash(klist:*) when run outside an explicit user request — these require the Bash sandbox disabled per CLAUDE.md and touch prod Kerberos auth (psqlb7sm100.swankmp.local)"
+    ],
+    "environment": [
+      "### Org-wide",
+      "**Organization**: Swank (swankmp.com / swankmp.local) — inferred from repo docs and README; DRM license server platform",
+      "**Cloud provider(s)**: Microsoft Azure (Azure Artifacts NuGet feed, Azure Key Vault, Azure DevOps, AKS/Kubernetes via Helm)",
+      "**Repository visibility**: private — Azure DevOps org swankmp (dev.azure.com/swankmp)",
+      "**Internal sharing / snippet hosting**: Atlassian Confluence/Jira (swankmp.atlassian.net) and private claude.ai artifacts are internal; Slack and Zendesk MCP posts send content to other people (Zendesk holds customer content) — treat posting there as an external send that needs an explicit request; public paste/gist services are outside the trust boundary",
+      "**Secrets management**: Azure Key Vault (vault.azure.net) — holds CENC private keys (`cenc-private-key-prod`, `cenc-private-key-nonprod`); Sealed Secrets for cluster secret delivery (e.g. helmchart/dcsl-downloader/templates/sealed-secret.yaml, helmchart/onedrm-sync/subcharts/secrets/templates/sealed-secret.yaml)",
+      "**Default / protected branches**: main (default branch, per repo facts) — protection status not queryable (gh lookup failed); treat main as protected by convention",
+      "**CI/CD deploy targets**: Azure DevOps (dev.azure.com) pipelines; container images pushed to stimpson.azurecr.io (config-derived — not a confirmed upload destination; uploads of local data still require confirmation); Kubernetes via Helm charts (cloud-hosted Swank/ apps)",
+      "**Network posture**: None configured — assume Claude Code runs on an ordinary developer machine (macOS) with open internet; contacted hosts include dev.azure.com, database.windows.net, vault.azure.net, connect.swankmp.com, aspire.dev",
+      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine or CI runner with open internet",
+      "**Source control**: dev.azure.com/swankmp (all projects, e.g. Streaming License Server/_git/widevine-modular-license-server)",
+      "**Trusted internal domains**: swankmp.com, swankmp.local, swankmp.net, swankmp.atlassian.net (Confluence/Jira), dev.azure.com (Azure DevOps), connect.swankmp.com",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: Key Provider endpoints (keyprovider.dev.ncus.apps.swankmp.net, keyprovider.qa.ncus.apps.swankmp.net, keyprovider.staging.ncus.apps.swankmp.net, keyprovider.swankmp.net); SQL Servers psqlb7sm100.swankmp.local (prod, Kerberos) and dsql-primary.swankmp.local (dev, SQL auth); Azure Key Vault (vault.azure.net)",
+      "**Internal package registry**: Azure Artifacts (Swank.* NuGet packages, Microsoft.Media.Drm.RMCore)",
+      "**Sensitive data locations & audiences**: Azure Key Vault CENC private keys (`cenc-private-key-prod`, `cenc-private-key-nonprod`); content keys encrypted at rest in OneDRM/Pulsar databases; `.env` files (gitignored); sealed-secret.yaml files under helmchart/; FairPlay credentials under Swank/FairPlay/keys/; share only with engineers on this project cleared for DRM key material",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any host/namespace/container with `prod`/`production` as a whole segment — e.g. production OneDRM database, production Key Provider (keyprovider.swankmp.net, keyprovider.staging.ncus.apps.swankmp.net), psqlb7sm100.swankmp.local (prod SQL Server)",
+      "**Protected deployment namespaces / environments**: production Kubernetes namespaces for Swank/ cloud-hosted apps; staging Key Provider (serves production keys per README, treat as prod-tier); the gitops repo (~/projects/gitops, ArgoCD) — pushing or merging changes to *.production.yaml or prod argocd-apps is a production deploy",
+      "**Protected IaC scopes**: Helm charts/values targeting production namespaces; helmchart/dcsl-downloader sealed-secret scope; IAM/RBAC for AKS clusters hosting prod Swank/ deployments",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development — .NET/C# and Java DRM license server codebase (Widevine/FairPlay/PlayReady/Marlin), including Widevine SDK upgrades and Aspire-orchestrated local dev",
+      "**Trusted repos**: every repo under /Users/andybarker/projects (including all git worktrees) and their origin remotes",
+      "**Org-specific CLIs**: aspire (Aspire CLI for distributed app orchestration), az (Azure CLI), dotnet, pwsh (skill scripts), uv (Python, per user-level CLAUDE.md), sqlcmd (mssql-tools18 ODBC), kinit/klist (Kerberos for prod SQL access)",
+      "**Routine conventions**: Jira tickets assigned to abarker@swankmp.com; branches named feature/<TICKET-ID> and commits prefixed with ticket IDs are routine for this user"
+    ]
+  },
   "voiceEnabled": true
 }

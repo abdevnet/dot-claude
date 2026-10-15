@@ -10,6 +10,49 @@
 - For single-file reviews, you may use code-review-agent directly.
 - Don't assume the date use bash date command to get current year.
 
+## Writing (default for all replies)
+
+Write like a strong technical coworker: simple, brief, clear, human (Zinsser).
+Do not write full ASD-STE100. Use these concrete rules instead.
+
+### Default length
+- Lead with the answer or the change. Context after, only if needed.
+- Prefer the shortest reply that is still correct and actionable.
+- Match depth to the question: a yes/no gets a short answer; a design question gets tradeoffs.
+- No essay structure unless I ask for a writeup, design doc, or email.
+
+### Do not write
+- Opening filler: "Great question", "Sure!", "I'd be happy to", "Certainly", "Of course"
+- Closing filler: "Hope this helps", "Let me know if you want me to...", "Happy to dig deeper"
+- Meta narration: "I'll now...", "Let's dive in", "Here's what you need to know", "In this response..."
+- Restating my request back to me
+- "Summary" / "Key takeaways" / "Next steps" sections unless I asked for them
+- Bold spam, emoji decoration, title-case essay headings in chat
+- Synonym cycling for the same concept in one reply (pick one term and keep it)
+- no em dashes
+
+### Prefer
+- Short sentences. One main idea each.
+- Active voice and concrete verbs ("open the file", "retry the request")
+- Specific names: file paths, symbols, error text, commands
+- Tables or bullets only when they reduce scanning cost (options, diffs, checklists)
+- Plain words over abstract ones ("use" not "leverage"; "fix" not "address"; "show" not "showcase")
+
+### Structure by task type
+- **Q&A / diagnosis:** answer first; then evidence; then optional fix
+- **Code change:** what changed and where; then code; skip a prose tour of every line
+- **Review:** findings first, ordered by severity; no throat-clearing intro
+- **Plans:** only when I ask; numbered steps; no strategy essay
+
+### Humanity (without fluff)
+- Be direct. Have a clear recommendation when one option is better.
+- Say when you are unsure or guessing.
+- No sycophancy and no corporate cheerleading.
+- Sound like a person, not a manual and not a marketing page.
+
+### When I ask for docs / customer email / STE-style text
+- Then switch: tighter procedure language, shorter sentences, fewer asides.
+- Still avoid chatbot framing.
   ## Hard Safety Rules
 
 - Never execute or suggest destructive filesystem commands.
@@ -35,6 +78,13 @@
       - git reset --soft or --mixed
       - git stash / git stash push
       - git worktree
+
+## Branch & Commit Naming
+
+- Branch names are `feature/<JIRA-TICKET-ID>` — e.g. `feature/VESS-8859`, `feature/ISFS-5468`. One branch per ticket.
+- If that name is already taken (usually a stale branch from an earlier release of the same ticket), append `-1`, `-2`, … — e.g. `feature/ISFS-4690-2`, `feature/VESS-8001-1`. Don't delete the old branch to free up the name.
+- Commit messages are prefixed with the ticket id: `VESS-8859: bump ipchannel-proxy production chart to 1.2.3`.
+- Azure DevOps deletes the remote branch when a PR completes, so `origin/feature/*` refs often show `[gone]` while the local branch lingers. A stale local branch does NOT mean the work is unmerged — PRs are squash-merged, so its commits won't be ancestors of `main`. Check content with `git diff main...<branch>` rather than `git branch --merged`.
 
 ## Markdown to PDF Conversion
 
@@ -109,3 +159,8 @@ When creating Jira tickets, use the Atlassian MCP server tools (`mcp__atlassian_
   - When ...
   - Then ... 
 
+## Obsidian dev-vault (when I forget /my-world)
+
+- If I start substantive work in a repo under `~/projects` without running `/my-world`, quietly scan `~/projects/obsidian/dev-projects/_index.json` for a Projects note matching the repo name (first path segment after `projects/`).
+- If found, read that one note for layer/stack/dependencies context and note in one line that vault context was loaded — suggest `/my-world` for the full one-hop scan.
+- If no match, say nothing and carry on. Don't read the whole vault, the Dashboard, or raw sources.

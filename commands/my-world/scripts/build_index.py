@@ -21,7 +21,7 @@ from pathlib import Path
 VAULT = Path.home() / "projects" / "obsidian" / "dev-projects"
 OUTPUT = VAULT / "_index.json"
 FOLDERS = ["Projects", "Products", "03 - Concepts", "01 - Raw Sources"]
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 WIKILINK_RE = re.compile(r"\[\[([^\]\n]+?)\]\]")
 
@@ -96,6 +96,24 @@ def wikilink_targets(values) -> list[str]:
     return out
 
 
+def extract_overview(text: str, limit: int = 140) -> str:
+    """First sentence of the `## Overview` section, else of the first body paragraph."""
+    body = text
+    if body.startswith("---"):
+        end = body.find("\n---", 3)
+        if end != -1:
+            body = body[end + 4:]
+    m = re.search(r"^## Overview\s*\n(.*?)(?=^#|\Z)", body, re.M | re.S)
+    chunk = m.group(1) if m else ""
+    if not chunk.strip():
+        paras = [p.strip() for p in re.split(r"\n\s*\n", body)]
+        chunk = next((p for p in paras if p and not p.startswith(("#", "-", "|", "```", ">"))), "")
+    chunk = re.sub(r"\[\[(?:[^\]|]*\|)?([^\]]+)\]\]", r"\1", chunk).replace("**", "")
+    line = " ".join(chunk.split()).lstrip("- ")
+    sentence = re.split(r"(?<=[.!?])\s", line, maxsplit=1)[0]
+    return sentence if len(sentence) <= limit else sentence[: limit - 1].rstrip() + "…"
+
+
 def build_payload() -> dict:
     """Scan the vault folders and return the index payload (does not write)."""
     notes = []
@@ -115,9 +133,12 @@ def build_payload() -> dict:
                 "title": path.stem,
                 "tags": fm.get("tags") or [],
                 "wikilinks": extract_wikilinks(text),
+                "overview": extract_overview(text),
             }
             if folder == "Projects":
                 rec["repo"] = fm.get("repo") or ""
+                rec["layer"] = fm.get("layer") or ""
+                rec["status"] = fm.get("status") or ""
                 rec["depends_on"] = wikilink_targets(fm.get("depends-on"))
                 rec["depended_on_by"] = wikilink_targets(fm.get("depended-on-by"))
             elif folder == "01 - Raw Sources":

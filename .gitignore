@@ -40,3 +40,38 @@
 tmp/
 *.tmp
 *.swp
+
+# Claude-managed skill folders (trash bin and claude.ai sync cache)
+skills/.trash/
+skills/synced/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Symlinks into ~/projects/apple/game-porting-toolkit (not tracked here)
+/agents/porting-assistant.md
+/skills/compiling-with-metal-shaderconverter
+/skills/creating-metal4-shader-pipelines
+/skills/debugging-rendering-issues
+/skills/integrating-metal-shaderconverter-shaders
+/skills/managing-metal-cpp-lifetimes
+/skills/managing-metal4-resources
+/skills/managing-metal4-synchronization
+/skills/porting-discover
+/skills/porting-execute
+/skills/porting-handoff
+/skills/porting-methodology
+/skills/porting-plan-goal
+/skills/porting-start-milestone
+/skills/porting-status
+/skills/porting-validate
+/skills/presenting-metal-drawables
+/skills/setting-up-macos-window
+/skills/translating-to-metal4-api
+/skills/using-game-controller
+/skills/using-gpucapture
+/skills/using-gpudebug
+/skills/using-metal-validation
+/skills/using-metalfx-frame-interpolation
+/skills/using-metalfx-temporal-upscaler

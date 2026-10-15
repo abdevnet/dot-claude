@@ -23,7 +23,7 @@ The working directory is also a seed: the first path segment after `projects/` i
 - `#` header lines: budget used, seeds and why, task terms, hubs, unresolved links, loaded/omitted counts, and source control when the working directory is a repo.
 - `===== SYSTEM MAP =====`: every project with layer, one-line overview, and depends-on, plus concept and product one-liners. Use it to reason about anything outside the loaded slice.
 - `===== PROJECT|CONCEPT|PRODUCT [full|card] score · reason: path =====`: notes in rank order. Seeds and one-hop neighbours come in full; two-hop and keyword or tag matches come in full if budget allows, otherwise as cards (frontmatter + overview). Read a card's path when you need the whole note.
-- `> code:` line under each project note: local clone path, branch, last commit, when the note was edited, non-merge commits since then, and whether a `CLAUDE.md` exists. With several worktrees of one repo, it shows the most recently committed one. `POSSIBLY STALE` means 5+ commits landed after the note's last edit; the header lists these notes.
+- `> code:` line under each project note: local clone path, checked-out branch, last commit on `origin/<default>`, when origin was last fetched, when the note was edited (or `verified:`), non-merge commits on `origin/<default>` since then, and whether a `CLAUDE.md` exists. `POSSIBLY STALE` means 5+ commits landed after the note's last edit; the header lists these notes. An old fetch date means the count may be low; `/wiki-lint` fetches hot repos and `/wiki-refresh` updates stale notes.
 - `===== UNPROCESSED RAW SOURCES =====`: listing only, if any relate to loaded notes.
 - `===== OMITTED =====`: relevant notes that didn't fit. Read them on demand.
 

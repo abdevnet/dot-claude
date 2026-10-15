@@ -7,9 +7,12 @@ set -euo pipefail
 VAULT="${WIKI_LINT_VAULT:-$HOME/projects/obsidian/dev-projects}"
 
 exec python3 - "$VAULT" <<'PYEOF'
-import os, re, sys
+import os, re, sys, time
 from pathlib import Path
 from datetime import datetime
+
+sys.path.insert(0, str(Path.home() / ".claude/commands/my-world/scripts"))
+import codestate as cs
 
 VAULT = Path(sys.argv[1])
 IN_SCOPE = ["Projects", "Products", "03 - Concepts", "01 - Raw Sources", "Clippings"]
@@ -200,6 +203,35 @@ def main():
                 tag_count[t] = tag_count.get(t, 0) + 1
     one_offs = sorted([t for t, c in tag_count.items() if c == 1])
 
+    # 8–9. Code drift: fetch hot repos, then compare each project note to origin/<default>.
+    t0 = time.time()
+    proj_notes = []
+    for f, d in data.items():
+        if 'Projects' not in str(f):
+            continue
+        proj_notes.append(({"title": f.stem, "repo": d['fm'].get('repo') or ""}, f))
+    clone_sets = [cs.find_clones(n) for n, _ in proj_notes]
+    hot = cs.hot_repos([c for c in clone_sets if c])
+    fetched = cs.fetch_all(list(hot))
+    states = cs.code_states(proj_notes)
+    drift_secs = time.time() - t0
+    home = str(Path.home())
+    fetch_items = [
+        f"`{str(r).replace(home, '~')}` — {hot[r]}" + ("" if ok else f" — **fetch failed:** {err}")
+        for r, ok, err in sorted(fetched, key=lambda x: (x[1], str(x[0])))
+    ]
+    fetch_failed = sum(1 for _, ok, _ in fetched if not ok)
+    stale_rows = sorted(
+        ((n, st) for (n, _), st in zip(proj_notes, states) if st.get("stale")),
+        key=lambda x: -x[1]["since"],
+    )
+    stale_items = [f"`{n['title']}` — {cs.status_line(st)}" for n, st in stale_rows]
+    no_clone = sorted(n['title'] for (n, _), st in zip(proj_notes, states) if not st["clone"])
+    fetch_old = sorted(
+        n['title'] for (n, _), st in zip(proj_notes, states)
+        if st["clone"] and st["clone"] not in hot and time.time() - st["fetched"] > 30 * 86400
+    )
+
     # --- Report ---
     out = []
     out.append(f"# Wiki Lint Report — {TODAY.isoformat()}")
@@ -214,6 +246,9 @@ def main():
     out.append(f"- {len(unprocessed)} unprocessed raw sources ({stale_count} stale)")
     out.append(f"- {len(no_rel)} clippings with no relations")
     out.append(f"- {len(one_offs)} one-off tags")
+    out.append(f"- {len(fetched)} hot repos fetched ({fetch_failed} failed) in {drift_secs:.0f}s")
+    out.append(f"- {len(stale_items)} possibly stale project notes (≥{cs.STALE_COMMITS} commits on origin default branch since last edit)")
+    out.append(f"- {len(no_clone)} project notes with no local clone")
     out.append("")
     out.append("## Findings")
 
@@ -233,6 +268,12 @@ def main():
     section("6. Clippings with no relations", no_rel)
     tag_display = one_offs[:15] + ([f"_… and {len(one_offs) - 15} more_"] if len(one_offs) > 15 else [])
     section("7. One-off tags", tag_display)
+    section("8. Hot repos fetched", fetch_items)
+    section("9. Possibly stale project notes", stale_items)
+    if fetch_old:
+        out.append(f"\n_Not fetched in 30+ days (not hot, so counts may be low): {', '.join(fetch_old)}_")
+    if no_clone:
+        out.append(f"\n_No local clone: {', '.join(no_clone)}_")
 
     print("\n".join(out))
 

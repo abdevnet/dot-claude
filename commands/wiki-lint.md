@@ -13,14 +13,17 @@ That's it. One command, one permission prompt. The script is a self-contained Py
 1. Walks `Projects/`, `Products/`, `03 - Concepts/`, `01 - Raw Sources/`, `Clippings/` (skipping README.md files)
 2. Parses YAML frontmatter and wikilinks in a single pass
 3. Runs all 7 structural checks (broken links, asymmetric deps, missing frontmatter, orphans, unprocessed clippings, clippings without relations, one-off tags)
-4. Prints a single markdown report to stdout
+4. Runs `git fetch --prune origin` on hot repos: clones of project notes with a Claude Code session or one of your commits in the last 30 days. Worktrees of one repo are fetched once. Fetches run in parallel with prompts disabled, so expired credentials fail fast and show up in the report instead of hanging.
+5. Compares every project note with its clone's `origin/<default branch>` (checks 8–9): hot repos fetched, and notes with 5+ non-merge commits since their last edit or `verified:` date
+6. Prints a single markdown report to stdout
 
 ## What you do
 
 1. Run the command exactly as shown above (do not call individual greps/globs — they were the source of the old permission-prompt spam).
 2. Read the script's stdout report verbatim into your response.
-3. Summarize the headline counts in 1-2 sentences if appropriate.
-4. Ask the user which categories they want to fix. **Do not start fixing anything without explicit approval** — this command is read-only by design.
+3. Summarize the headline counts in 1-2 sentences if appropriate. Call out fetch failures: they usually mean an expired Azure DevOps credential.
+4. For stale project notes, suggest `/wiki-refresh` (all flagged notes) or `/wiki-refresh <project>`.
+5. Ask the user which categories they want to fix. **Do not start fixing anything without explicit approval** — this command is read-only by design.
 
 ## Overrides
 
@@ -36,7 +39,7 @@ Not yet implemented in the script. When the user asks for `deep` mode, fall back
 
 - Duplicate/overlapping concept pages (propose merges)
 - Missing concept pages (terms mentioned repeatedly but never extracted)
-- Stale project notes (`status: active` but `git log -1 --format=%cr` shows no commits in 90+ days)
+- Dormant projects (`status: active` but `origin/<default>` has no commits in 90+ days)
 - Inconsistent facts about the same entity across notes
 - Missing wikilink connections between pages that mention each other
 
@@ -44,7 +47,7 @@ Run these sequentially; they're token-heavy. Always produce a report, never auto
 
 ## Rules
 
-- **Read-only.** Never edit, rename, or delete files during a lint run.
+- **Read-only vault.** Never edit, rename, or delete files during a lint run. The only write is `git fetch`, which updates `origin/*` refs and never touches working trees or checked-out branches. Never pull.
 - **One invocation.** Call the `.sh` script; do not reimplement its checks with ad-hoc grep/glob calls.
 - **Precise findings.** The script already includes file paths. Preserve them in your response.
 - **No auto-fix.** After reporting, ask which findings the user wants to act on.

@@ -23,17 +23,14 @@ from __future__ import annotations
 import json
 import os
 import re
-import subprocess
 import sys
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor
-from functools import lru_cache
-from datetime import datetime
 from pathlib import Path
-from urllib.parse import unquote
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_index as bi  # noqa: E402
+import codestate as cs  # noqa: E402
+from codestate import git, repo_last_segment  # noqa: E402
 
 DEFAULT_BUDGET = 100_000
 FULL_FLAG_BUDGET = 200_000
@@ -42,8 +39,6 @@ MAX_DEPTH = 2
 MIN_SCORE = 40
 FULL_SCORE = 300
 UPGRADE_SCORE = 100
-STALE_COMMITS = 5
-PROJECTS_ROOT = Path.home() / "projects"
 DIST_SCORE = {0: 1000, 1: 500, 2: 150}
 GENERIC_TAGS = {"project", "concept", "product", "raw-source", "source", "moc"}
 RAW = "01 - Raw Sources"
@@ -105,10 +100,6 @@ def candidate_keys(cwd: str) -> list[str]:
     return list(dict.fromkeys(c for c in cands if c))
 
 
-def repo_last_segment(repo: str) -> str:
-    return repo.rstrip("/").split("/")[-1] if repo else ""
-
-
 def match_name(name: str, notes: list[dict]) -> dict | None:
     key = name.lower()
     for n in notes:
@@ -120,87 +111,6 @@ def match_name(name: str, notes: list[dict]) -> dict | None:
         ):
             return n
     return None
-
-
-def git(cwd: Path | str, *args: str) -> str:
-    try:
-        return subprocess.run(
-            ["git", "-C", str(cwd), *args], capture_output=True, text=True, timeout=5
-        ).stdout.strip()
-    except (OSError, ValueError, subprocess.SubprocessError):
-        return ""
-
-
-@lru_cache(maxsize=None)
-def is_repo_root(d: Path) -> bool:
-    top = git(d, "rev-parse", "--show-toplevel")
-    return bool(top) and Path(top) == d.resolve()
-
-
-def norm_remote(url: str) -> str:
-    u = unquote(url).strip().lower()
-    u = re.sub(r"^[a-z+]+://", "", u)
-    u = re.sub(r"^[^@/]+@", "", u)
-    u = u.replace("ssh.dev.azure.com:v3/", "dev.azure.com/").replace(":", "/")
-    return u.removesuffix(".git").rstrip("/")
-
-
-@lru_cache(maxsize=None)
-def origin_of(d: Path) -> str:
-    return norm_remote(git(d, "remote", "get-url", "origin"))
-
-
-def find_clones(note: dict) -> list[Path]:
-    """Local clones of the note's repo. Sibling worktrees sharing its origin count too;
-    a folder of unrelated repos (e.g. an umbrella of symlinks) never matches by name alone."""
-    repo = note.get("repo") or ""
-    if repo.startswith(("~", "/")):
-        dirs, want = [Path(repo).expanduser()], ""
-    else:
-        want = norm_remote(repo) if repo else ""
-        names = dict.fromkeys([note["title"], unquote(repo_last_segment(repo))])
-        dirs = [PROJECTS_ROOT / n for n in names if n]
-    for d in dirs:
-        if not d.is_dir():
-            continue
-        if is_repo_root(d):
-            want = want or origin_of(d)
-            pool = [d]
-            if d.parent != PROJECTS_ROOT:
-                pool += [c for c in sorted(d.parent.iterdir()) if c != d and c.is_dir() and is_repo_root(c)]
-        else:
-            pool = [c for c in sorted(d.iterdir()) if c.is_dir() and is_repo_root(c)]
-        clones = [c for c in pool if want and origin_of(c) == want]
-        if not clones and is_repo_root(d):
-            clones = [d]
-        if clones:
-            return clones
-    return []
-
-
-def code_status(note: dict) -> tuple[str, bool]:
-    """One line tying a project note to its local clone, and whether the note looks stale."""
-    clones = find_clones(note)
-    if not clones:
-        return "code: no local clone under ~/projects", False
-    stamps = {c: int(git(c, "log", "-1", "--format=%ct") or 0) for c in clones}
-    repo = max(clones, key=stamps.get)
-    edited = int((bi.VAULT / note["file"]).stat().st_mtime)
-    since = int(git(repo, "rev-list", "--count", "--no-merges", f"--since={edited}", "HEAD") or 0)
-    day = lambda ts: datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
-    has_claude = any((p / "CLAUDE.md").is_file() for p in {repo, repo.parent} if p != PROJECTS_ROOT)
-    stale = since >= STALE_COMMITS
-    parts = [
-        f"code: {str(repo).replace(str(Path.home()), '~')}",
-        f"branch {git(repo, 'branch', '--show-current') or 'detached'}",
-        f"last commit {day(stamps[repo])}",
-        f"note edited {day(edited)}",
-        f"{since} commits since" + (" — POSSIBLY STALE" if stale else ""),
-        f"CLAUDE.md {'yes' if has_claude else 'no'}",
-    ]
-    if len(clones) > 1:
-        parts.append(f"+{len(clones) - 1} other clones of this repo")
-    return " · ".join(parts), stale
 
 
 def read_text(note: dict, cache: dict) -> str:
@@ -470,14 +380,13 @@ def main() -> int:
     code_lines: dict[str, str] = {}
     stale_notes: list[str] = []
     project_keys = [k for _, k, *_ in loaded if by_key[k]["folder"] == "Projects"]
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        results = pool.map(lambda k: code_status(by_key[k]), project_keys)
-    for k, (line, stale) in zip(project_keys, results):
-        code_lines[k] = line
-        if stale:
+    states = cs.code_states([(by_key[k], bi.VAULT / by_key[k]["file"]) for k in project_keys])
+    for k, st in zip(project_keys, states):
+        code_lines[k] = cs.status_line(st)
+        if st.get("stale"):
             stale_notes.append(by_key[k]["title"])
     if stale_notes:
-        print(f"# possibly stale notes (≥{STALE_COMMITS} commits since last edit): {', '.join(stale_notes)}")
+        print(f"# possibly stale notes (≥{cs.STALE_COMMITS} commits on origin default branch since last edit): {', '.join(stale_notes)}")
     print(f"# loaded: {sum(1 for l in loaded if l[0] == 'full')} full, "
           f"{sum(1 for l in loaded if l[0] == 'card')} cards; omitted: {len(omitted)}")
     print()

@@ -1,13 +1,8 @@
 - Use comments sparingly. Only comment on complex code
 - Keep responses concise and focused.
 - Avoid generating extra documents, summaries, or plans unless I specifically ask for them.
-- Always use the batch-code-analysis-skill when asked to review multiple files or a PR. The batch skill will automatically:
-  - Load bundled standards from skill references/standards/
-  - Partition work into parallel tasks
-  - Delegate to code-review-agent workers (Haiku 4.5)
-  - Escalate to Sonnet 4.5 when needed
-  - Aggregate results into a single review
-- For single-file reviews, you may use code-review-agent directly.
+- Always use the swank-code-review skill when asked to review code: a PR, a branch, a diff, or one or more files. It reviews in-thread against the bundled Swank standards in the skill's references/standards/ and runs the documentation accuracy gate. Refresh the bundle with the skill's scripts/sync-standards.sh.
+- Use the code-review-agent subagent only for an independent read when this session wrote the code, or for one file group of a diff too large for one context.
 - Don't assume the date use bash date command to get current year.
 
 ## Writing (default for all replies)
